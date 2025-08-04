@@ -40,6 +40,71 @@
                 color: #3B82F6;
                 background: #F1F5F9;
             }
+
+            /* --- MIGLIORAMENTI GRAFICI UI/UX --- */
+
+            /* Giorni del calendario */
+            [data-datekey] {
+                border-radius: 0.5rem;
+                transition: background-color 0.3s, transform 0.2s;
+            }
+
+            [data-datekey]:hover {
+                background-color: #e0f2fe !important;
+                transform: scale(1.02);
+            }
+
+            [data-datekey]>div:first-child>span {
+                font-size: 1rem;
+                font-weight: bold;
+            }
+
+            [data-datekey] .text-xs.p-2 {
+                box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.3);
+                font-size: 0.75rem;
+                font-weight: 500;
+            }
+
+            /* Attività e orari */
+            [data-datekey] .text-[10px].font-medium {
+                background-color: rgba(255, 255, 255, 0.3);
+                padding: 0 4px;
+                border-radius: 0.25rem;
+                display: inline-block;
+                margin-top: 2px;
+            }
+
+            [data-datekey] .text-[10px].opacity-90 {
+                opacity: 0.6;
+                font-size: 10px;
+            }
+
+            /* Input modale */
+            input[type="text"],
+            input[type="time"],
+            input[type="number"],
+            textarea,
+            select {
+                border-radius: 0.75rem;
+                padding: 0.75rem 1rem;
+                font-size: 0.875rem;
+                transition: box-shadow 0.2s;
+            }
+
+            input:focus,
+            textarea:focus,
+            select:focus {
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+            }
+
+            /* Pulsanti */
+            button {
+                transition: background-color 0.2s, transform 0.1s;
+            }
+
+            button:hover {
+                transform: translateY(-1px);
+            }
         </style>
     </head>
 
@@ -606,8 +671,8 @@
                     </thead>
                     <tbody>
                         ${Object.entries(analyticsData.clientData)
-                            .sort(([, a], [, b]) => b.totalRevenue - a.totalRevenue)
-                            .map(([client, data]) => `
+                        .sort(([, a], [, b]) => b.totalRevenue - a.totalRevenue)
+                        .map(([client, data]) => `
                             <tr class="border-b">
                                 <td class="p-2 font-medium">${client}</td>
                                 <td class="p-2">${data.totalHours.toFixed(2)}</td>
@@ -695,7 +760,7 @@
                     // Ordina i clienti per numero di interventi (dal più grande al più piccolo)
                     const sortedClients = Object.entries(analyticsData.clientData)
                         .sort(([, a], [, b]) => b.interventions - a.interventions);
-                    
+
                     const clientNames = sortedClients.map(([name]) => name);
                     const barData = {
                         labels: clientNames,
@@ -767,13 +832,13 @@
                     const monthKey = `${currentYear}-${i.toString().padStart(2, '0')}`;
                     allMonthsKeys.push(monthKey);
                 }
-                
+
                 // Crea etichette per tutti i mesi
                 const monthLabels = allMonthsKeys.map(key => {
                     const [, month] = key.split('-').map(Number);
                     return months[month - 1]; // months array è 0-based, quindi month-1
                 });
-                
+
                 // Usa allMonthsKeys invece di monthsKeys per includere tutti i mesi
                 const monthsKeys = allMonthsKeys;
                 container.innerHTML = `
@@ -1002,8 +1067,8 @@
                         </thead>
                         <tbody>
                             ${Object.entries(analyticsData.clientData)
-                                .sort(([, a], [, b]) => b.totalRevenue - a.totalRevenue)
-                                .map(([client, data], index) => `
+                        .sort(([, a], [, b]) => b.totalRevenue - a.totalRevenue)
+                        .map(([client, data], index) => `
                                 <tr class="border-b">
                                     <td class="p-3 font-bold text-center">${index + 1}</td>
                                     <td class="p-3 font-medium">${client}</td>
@@ -1092,7 +1157,7 @@
                         Object.entries(analyticsData.clientData).forEach(([clientName, data]) => {
                             const avgHoursPerSession = data.totalHours / data.interventions;
                             const avgRevenuePerHour = data.totalRevenue / data.totalHours;
-                            
+
                             clientMatrixData.push({
                                 client: clientName,
                                 hours: avgHoursPerSession,
@@ -1118,7 +1183,7 @@
                                             // Categorizza i clienti in base a valore e impegno
                                             const avgHours = 4; // Media delle ore
                                             const avgRevenue = 50; // Media del fatturato orario
-                                            
+
                                             if (d.revenue > avgRevenue && d.hours < avgHours) return '#10B981'; // Verde - Ideali
                                             if (d.revenue > avgRevenue && d.hours > avgHours) return '#3B82F6'; // Blu - Strategici
                                             if (d.revenue < avgRevenue && d.hours < avgHours) return '#F59E0B'; // Giallo - Marginali
@@ -1154,7 +1219,7 @@
                                         },
                                         tooltip: {
                                             callbacks: {
-                                                label: function(context) {
+                                                label: function (context) {
                                                     const client = clientMatrixData[context.dataIndex];
                                                     return [
                                                         `Cliente: ${client.client}`,
@@ -1276,7 +1341,7 @@
                 const revenuePerClient = Object.values(analyticsData.clientData).map(c => c.totalRevenue);
                 const numClients = Object.keys(analyticsData.clientData).length;
                 const avgRevenuePerClient = analyticsData.totalRevenue / numClients;
-                
+
                 // Calcolo dell'indice di dipendenza più accurato
                 let isDiversified = false;
                 if (numClients === 1) {
@@ -1392,7 +1457,7 @@
             function openAddSessionForm(session = null, index = null) {
                 const modalRoot = document.getElementById('modal-root');
                 editingSessionIndex = index;
-                
+
                 // Ottieni tutti i clienti esistenti
                 const existingClients = new Set();
                 Object.values(workSessions).forEach(sessions => {
@@ -1432,9 +1497,9 @@
                         <div class="relative w-2/3">
                             <select id="clientDropdown" class="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 <option value="new">Nuovo cliente...</option>
-                                ${Array.from(existingClients).map(client => 
-                                    `<option value="${client}" ${session && session.clientName === client ? 'selected' : ''}>${client}</option>`
-                                ).join('')}
+                                ${Array.from(existingClients).map(client =>
+                    `<option value="${client}" ${session && session.clientName === client ? 'selected' : ''}>${client}</option>`
+                ).join('')}
                             </select>
                         </div>
                         <div class="w-1/3 flex justify-center">
@@ -1513,14 +1578,14 @@
             </div>
         </div>
     `;
-                
+
                 modalRoot.style.display = 'block';
-                
+
                 // Aggiungi event listener per il dropdown
                 const clientDropdown = document.getElementById('clientDropdown');
                 const clientNameInput = document.getElementById('clientName');
-                
-                clientDropdown.addEventListener('change', function() {
+
+                clientDropdown.addEventListener('change', function () {
                     if (this.value === 'new') {
                         clientNameInput.value = '';
                         clientNameInput.placeholder = 'Inserisci il nome del cliente';
@@ -1530,11 +1595,11 @@
                         document.getElementById('inpsRate').value = '0.00';
                     } else {
                         clientNameInput.value = this.value;
-                        
+
                         // Trova i dati del cliente selezionato
                         const selectedClient = this.value;
                         let clientData = null;
-                        
+
                         // Cerca tra tutte le sessioni per trovare i dati più recenti del cliente
                         Object.values(workSessions).forEach(sessions => {
                             sessions.forEach(s => {
@@ -1545,7 +1610,7 @@
                                 }
                             });
                         });
-                        
+
                         // Compila i campi con i dati del cliente
                         if (clientData) {
                             document.getElementById('clientColor').value = clientData.clientColor || '#3B82F6';
@@ -1556,38 +1621,39 @@
                 });
             }
 
-            function handleSessionSubmit(event) {
-                const form = event.target;
-                const clientName = form.clientName.value.trim();
-                const startTime = form.startTime.value;
-                const endTime = form.endTime.value;
-                const hourlyRate = parseFloat(form.hourlyRate.value) || 0;
-                const inpsRate = parseFloat(form.inpsRate.value) || 0;
-                const attivita = form.notes.value.trim();
-                const clientColor = form.clientColor.value;
+            async function handleSessionSubmit(event) {
+                const clientName = document.getElementById('clientName').value.trim();
+                const clientColor = document.getElementById('clientColor').value;
+                const startTime = document.getElementById('startTime').value;
+                const endTime = document.getElementById('endTime').value;
+                const hourlyRate = parseFloat(document.getElementById('hourlyRate').value || 0);
+                const inpsRate = parseFloat(document.getElementById('inpsRate').value || 0);
+                const notes = document.getElementById('notes').value.trim();
 
                 if (!clientName || !startTime || !endTime) {
-                    alert('Compila tutti i campi obbligatori.');
+                    alert("Compila tutti i campi obbligatori.");
                     return;
                 }
 
-                const start = new Date(`${selectedDateKey}T${startTime}`);
-                const end = new Date(`${selectedDateKey}T${endTime}`);
-                const duration = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-                
-                // Calcola il ricavo totale basato sulla tariffa oraria
+                const start = new Date(`1970-01-01T${startTime}:00`);
+                const end = new Date(`1970-01-01T${endTime}:00`);
+                if (end <= start) {
+                    alert("L'orario di fine deve essere successivo a quello di inizio.");
+                    return;
+                }
+
+                const duration = (end - start) / (1000 * 60 * 60);
                 const earnings = hourlyRate * duration;
 
-                const newSession = {
+                const sessionData = {
                     clientName,
+                    clientColor,
                     startTime,
                     endTime,
                     duration,
                     earnings,
-                    clientColor,
-                    hourlyRate,
                     inpsRate,
-                    attivita
+                    attivita: notes
                 };
 
                 if (!workSessions[selectedDateKey]) {
@@ -1595,16 +1661,26 @@
                 }
 
                 if (editingSessionIndex !== null) {
-                    // Modifica sessione esistente
-                    workSessions[selectedDateKey][editingSessionIndex] = newSession;
+                    workSessions[selectedDateKey][editingSessionIndex] = sessionData;
                 } else {
-                    // Aggiungi nuova sessione
-                    workSessions[selectedDateKey].push(newSession);
+                    workSessions[selectedDateKey].push(sessionData);
                 }
 
-                saveToStorage();
+                // 🔄 AGGIORNA TUTTE LE SESSIONI DELLO STESSO CLIENTE
+                Object.entries(workSessions).forEach(([dateKey, sessions]) => {
+                    sessions.forEach(session => {
+                        if (session.clientName === clientName) {
+                            session.clientColor = clientColor;
+                            if (session.duration) {
+                                session.earnings = hourlyRate * session.duration;
+                            }
+                            session.inpsRate = inpsRate;
+                        }
+                    });
+                });
+
+                await saveToStorage();
                 closeModal();
-                render();
             }
 
             function deleteSession(index) {
