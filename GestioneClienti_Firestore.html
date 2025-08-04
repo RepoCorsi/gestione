@@ -456,12 +456,12 @@
                     const isTodayDate = isToday(day.date);
                     
                     daysGrid += `
-        <div class="min-h-[140px] border-r border-b last:border-r-0 p-3 cursor-pointer transition-all hover:bg-blue-50 ${!day.isCurrentMonth ? 'bg-gray-50 text-gray-400' : 'bg-white'} ${isTodayDate ? 'ring-2 ring-blue-500 border-blue-500' : ''}"
+        <div class="min-h-[140px] border-r border-b last:border-r-0 p-3 cursor-pointer transition-all hover:bg-blue-50 ${!day.isCurrentMonth ? 'bg-gray-50 text-gray-400' : 'bg-white'} ${isTodayDate ? 'bg-gradient-to-br from-blue-100 to-blue-200 ring-2 ring-blue-400 shadow-lg' : ''}"
             data-datekey="${dateKey}"
             ${day.isCurrentMonth ? `ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, '${dateKey}')"` : 'style="pointer-events:none;opacity:0.5;"'}>
             <div class="flex justify-between items-start mb-3">
                 <span class="text-lg font-bold ${isTodayDate ? 'text-blue-800' : 'text-gray-800'}">${day.date.getDate()}</span>
-                ${isTodayDate ? '<span class="text-xs bg-blue-600 text-white px-2 py-1 rounded-full text-center w-full">OGGI</span>' : ''}
+                ${isTodayDate ? '<span class="text-xs bg-blue-600 text-white px-2 py-1 rounded-full">OGGI</span>' : ''}
             </div>
             ${sessions.length > 0 ? sessions.slice(0, 3).map((s, idx) => {
                         const bgColor = s.clientColor || '#3B82F6';
@@ -485,6 +485,10 @@
                                     <span class="mr-1">🕐</span>
                                     ${s.startTime}-${s.endTime}
                                 </div>
+                                ${s.earnings ? `<div class="text-xs font-bold mt-1 flex items-center">
+                                    <span class="mr-1">€</span>
+                                    ${s.earnings.toFixed(2)}
+                                </div>` : ''}
 
                             </div>
                             <div class="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2">
