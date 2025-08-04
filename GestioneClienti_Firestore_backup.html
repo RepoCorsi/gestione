@@ -1102,89 +1102,91 @@
     `;
                 setTimeout(() => {
                     // Grafico Matrice Valore/Impegno
-                    // Calcola i dati per la matrice
-                    const clientMatrixData = [];
-                    Object.entries(analyticsData.clientData).forEach(([clientName, data]) => {
-                        const avgHoursPerSession = data.totalHours / data.interventions;
-                        const avgRevenuePerHour = data.totalRevenue / data.totalHours;
-                        
-                        clientMatrixData.push({
-                            client: clientName,
-                            hours: avgHoursPerSession,
-                            revenue: avgRevenuePerHour,
-                            totalRevenue: data.totalRevenue,
-                            totalHours: data.totalHours
+                    setTimeout(() => {
+                        // Calcola i dati per la matrice
+                        const clientMatrixData = [];
+                        Object.entries(analyticsData.clientData).forEach(([clientName, data]) => {
+                            const avgHoursPerSession = data.totalHours / data.interventions;
+                            const avgRevenuePerHour = data.totalRevenue / data.totalHours;
+                            
+                            clientMatrixData.push({
+                                client: clientName,
+                                hours: avgHoursPerSession,
+                                revenue: avgRevenuePerHour,
+                                totalRevenue: data.totalRevenue,
+                                totalHours: data.totalHours
+                            });
                         });
-                    });
 
-                    // Crea il grafico scatter plot
-                    const ctx = document.getElementById('valueEffortMatrix');
-                    if (ctx && clientMatrixData.length > 0) {
-                        new Chart(ctx, {
-                            type: 'scatter',
-                            data: {
-                                datasets: [{
-                                    label: 'Clienti',
-                                    data: clientMatrixData.map(d => ({
-                                        x: d.hours,
-                                        y: d.revenue
-                                    })),
-                                    backgroundColor: clientMatrixData.map(d => {
-                                        // Categorizza i clienti in base a valore e impegno
-                                        const avgHours = 4; // Media delle ore
-                                        const avgRevenue = 50; // Media del fatturato orario
-                                        
-                                        if (d.revenue > avgRevenue && d.hours < avgHours) return '#10B981'; // Verde - Ideali
-                                        if (d.revenue > avgRevenue && d.hours > avgHours) return '#3B82F6'; // Blu - Strategici
-                                        if (d.revenue < avgRevenue && d.hours < avgHours) return '#F59E0B'; // Giallo - Marginali
-                                        return '#EF4444'; // Rosso - Critici
-                                    }),
-                                    pointRadius: 8,
-                                    pointHoverRadius: 12
-                                }]
-                            },
-                            options: {
-                                responsive: true,
-                                maintainAspectRatio: false,
-                                scales: {
-                                    x: {
-                                        title: {
-                                            display: true,
-                                            text: 'Ore Medie per Sessione'
-                                        },
-                                        min: 0,
-                                        max: 8
-                                    },
-                                    y: {
-                                        title: {
-                                            display: true,
-                                            text: 'Fatturato Orario (€)'
-                                        },
-                                        min: 0
-                                    }
+                        // Crea il grafico scatter plot
+                        const ctx = document.getElementById('valueEffortMatrix');
+                        if (ctx && clientMatrixData.length > 0) {
+                            new Chart(ctx, {
+                                type: 'scatter',
+                                data: {
+                                    datasets: [{
+                                        label: 'Clienti',
+                                        data: clientMatrixData.map(d => ({
+                                            x: d.hours,
+                                            y: d.revenue
+                                        })),
+                                        backgroundColor: clientMatrixData.map(d => {
+                                            // Categorizza i clienti in base a valore e impegno
+                                            const avgHours = 4; // Media delle ore
+                                            const avgRevenue = 50; // Media del fatturato orario
+                                            
+                                            if (d.revenue > avgRevenue && d.hours < avgHours) return '#10B981'; // Verde - Ideali
+                                            if (d.revenue > avgRevenue && d.hours > avgHours) return '#3B82F6'; // Blu - Strategici
+                                            if (d.revenue < avgRevenue && d.hours < avgHours) return '#F59E0B'; // Giallo - Marginali
+                                            return '#EF4444'; // Rosso - Critici
+                                        }),
+                                        pointRadius: 8,
+                                        pointHoverRadius: 12
+                                    }]
                                 },
-                                plugins: {
-                                    legend: {
-                                        display: false
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    scales: {
+                                        x: {
+                                            title: {
+                                                display: true,
+                                                text: 'Ore Medie per Sessione'
+                                            },
+                                            min: 0,
+                                            max: 8
+                                        },
+                                        y: {
+                                            title: {
+                                                display: true,
+                                                text: 'Fatturato Orario (€)'
+                                            },
+                                            min: 0
+                                        }
                                     },
-                                    tooltip: {
-                                        callbacks: {
-                                            label: function(context) {
-                                                const client = clientMatrixData[context.dataIndex];
-                                                return [
-                                                    `Cliente: ${client.client}`,
-                                                    `Ore medie: ${client.hours.toFixed(1)}`,
-                                                    `Fatturato orario: €${client.revenue.toFixed(2)}`,
-                                                    `Fatturato totale: €${client.totalRevenue.toFixed(2)}`
-                                                ];
+                                    plugins: {
+                                        legend: {
+                                            display: false
+                                        },
+                                        tooltip: {
+                                            callbacks: {
+                                                label: function(context) {
+                                                    const client = clientMatrixData[context.dataIndex];
+                                                    return [
+                                                        `Cliente: ${client.client}`,
+                                                        `Ore medie: ${client.hours.toFixed(1)}`,
+                                                        `Fatturato orario: €${client.revenue.toFixed(2)}`,
+                                                        `Fatturato totale: €${client.totalRevenue.toFixed(2)}`
+                                                    ];
+                                                }
                                             }
                                         }
                                     }
-                                }
+                                });
                             }
                         });
-                    }
-                }, 10);
+                    }, 10);
+                }
 
                 // --- Tab 5: Produttività ---
                 function renderTabProduttivita(container, analyticsData) {
