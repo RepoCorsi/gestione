@@ -1489,12 +1489,12 @@
                     </div>
                 </div>
 
-                <!-- Sezione Note -->
+                <!-- Sezione Attività -->
                 <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">Note</label>
+                    <label class="block text-sm font-medium text-gray-700">Attività</label>
                     <textarea id="notes" rows="3" 
                               class="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                              placeholder="Note aggiuntive..."></textarea>
+                              placeholder="Descrivi l'attività svolta...">${session ? (session.notes || '') : ''}</textarea>
                 </div>
 
                 <!-- Pulsanti -->
@@ -1624,7 +1624,8 @@
         <div class="flex items-center justify-between p-4 rounded-lg shadow-sm" style="background-color: ${bgColor}; color: ${textColor};">
             <div>
                 <div class="font-bold text-lg">${session.clientName}</div>
-                <div class="text-sm">${session.startTime} - ${session.endTime} (${session.duration.toFixed(1)}h)</div>
+                ${session.notes ? `<div class="text-sm font-medium">${session.notes}</div>` : ''}
+                <div class="text-sm opacity-90">${session.startTime} - ${session.endTime} (${session.duration.toFixed(1)}h)</div>
             </div>
             <div class="flex space-x-2">
                 <button onclick="openAddSessionForm(${JSON.stringify(session).replace(/"/g, '&quot;')}, ${index})" class="p-2 rounded-full bg-white bg-opacity-20 hover:bg-opacity-30 transition-colors">
