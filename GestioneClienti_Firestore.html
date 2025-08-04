@@ -1563,7 +1563,8 @@
                             Object.values(workSessions).forEach(sessions => {
                                 sessions.forEach(s => {
                                     if (s.clientName === selectedClient) {
-                                        if (!clientData || (s.hourlyRate && !clientData.hourlyRate)) {
+                                        // Prendi sempre la sessione più recente che ha hourlyRate definito
+                                        if (!clientData || (s.hourlyRate !== undefined && (clientData.hourlyRate === undefined || s.hourlyRate > clientData.hourlyRate))) {
                                             clientData = s;
                                         }
                                     }
@@ -1573,8 +1574,8 @@
                             // Compila i campi con i dati del cliente
                             if (clientData) {
                                 document.getElementById('clientColor').value = clientData.clientColor || '#3B82F6';
-                                document.getElementById('hourlyRate').value = clientData.hourlyRate ? clientData.hourlyRate.toFixed(2) : '0.00';
-                                document.getElementById('inpsRate').value = clientData.inpsRate ? clientData.inpsRate.toFixed(2) : '0.00';
+                                document.getElementById('hourlyRate').value = clientData.hourlyRate !== undefined ? clientData.hourlyRate.toFixed(2) : '0.00';
+                                document.getElementById('inpsRate').value = clientData.inpsRate !== undefined ? clientData.inpsRate.toFixed(2) : '0.00';
                             }
                         }
                     });
