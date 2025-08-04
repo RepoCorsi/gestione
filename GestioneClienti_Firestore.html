@@ -21,15 +21,15 @@
                 background: rgba(0, 0, 0, 0.5);
             }
 
-            /* Centra perfettamente la modale su mobile */
+            /* Centra perfettamente la modale su mobile quando è visibile */
             @media (max-width: 768px) {
-                #modal-root {
+                #modal-root:not([style*="display: none"]) {
                     display: flex !important;
                     align-items: center !important;
                     justify-content: center !important;
                 }
 
-                #modal-root>div {
+                #modal-root:not([style*="display: none"])>div {
                     margin: auto !important;
                     transform: none !important;
                 }
