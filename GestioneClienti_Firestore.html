@@ -40,71 +40,6 @@
                 color: #3B82F6;
                 background: #F1F5F9;
             }
-
-            /* --- MIGLIORAMENTI GRAFICI UI/UX --- */
-
-            /* Giorni del calendario */
-            [data-datekey] {
-                border-radius: 0.5rem;
-                transition: background-color 0.3s, transform 0.2s;
-            }
-
-            [data-datekey]:hover {
-                background-color: #e0f2fe !important;
-                transform: scale(1.02);
-            }
-
-            [data-datekey]>div:first-child>span {
-                font-size: 1rem;
-                font-weight: bold;
-            }
-
-            [data-datekey] .text-xs.p-2 {
-                box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.3);
-                font-size: 0.75rem;
-                font-weight: 500;
-            }
-
-            /* Attività e orari */
-            [data-datekey] .text-[10px].font-medium {
-                background-color: rgba(255, 255, 255, 0.3);
-                padding: 0 4px;
-                border-radius: 0.25rem;
-                display: inline-block;
-                margin-top: 2px;
-            }
-
-            [data-datekey] .text-[10px].opacity-90 {
-                opacity: 0.6;
-                font-size: 10px;
-            }
-
-            /* Input modale */
-            input[type="text"],
-            input[type="time"],
-            input[type="number"],
-            textarea,
-            select {
-                border-radius: 0.75rem;
-                padding: 0.75rem 1rem;
-                font-size: 0.875rem;
-                transition: box-shadow 0.2s;
-            }
-
-            input:focus,
-            textarea:focus,
-            select:focus {
-                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
-            }
-
-            /* Pulsanti */
-            button {
-                transition: background-color 0.2s, transform 0.1s;
-            }
-
-            button:hover {
-                transform: translateY(-1px);
-            }
         </style>
     </head>
 
@@ -112,3 +47,1696 @@
         <div id="root" class="max-w-7xl mx-auto p-2 md:p-4"></div>
         <div id="modal-root" style="display:none;"></div>
         <script>
+
+
+            // --- Variabili globali ---
+            const months = [
+                'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
+                'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'
+            ];
+            const weekDays = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
+
+            const barColors = [
+                '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
+                '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1',
+                '#A21CAF', '#F43F5E', '#FACC15', '#22D3EE', '#4ADE80', '#F472B6'
+            ];
+
+            let currentDate = new Date();
+            let workSessions = {};
+            let selectedDateKey = null;
+            let editingSessionIndex = null;
+            let currentView = 'calendar'; // 'calendar' o 'analytics'
+            let analyticsTab = 0; // 0: Allocazione Tempo, 1: Frequenza, 2: Carico, 3: Redditività, 4: Produttività, 5: Diversificazione
+
+            // Registra il plugin per i datalabels
+            Chart.register(ChartDataLabels);
+
+
+            // --- Inizializzazione Firebase Firestore ---
+            const firebaseConfig = {
+                apiKey: "AIzaSyAFyUXnpaT7eICBVnn80y_oufSxq5x7yWY",
+                authDomain: "gestioneclienti-11d38.firebaseapp.com",
+                projectId: "gestioneclienti-11d38",
+                appId: "1:1021211846118:web:f92e44ad8d593a55b06227",
+                measurementId: "G-7VJ9FRDDEN"
+            };
+            firebase.initializeApp(firebaseConfig);
+            const db = firebase.firestore();
+            const analytics = firebase.analytics();
+            let isOnline = false;
+            let userId = "cqX7v7RtgeZfvYDHe0QsGh496x52";
+
+
+            // --- Persistenza Ibrida (Firestore + localStorage) ---
+            async function saveToStorage() {
+                console.log('Salvataggio dati...', Object.keys(workSessions).length, 'giorni');
+                // Salva sempre in localStorage come cache
+                localStorage.setItem('workSessions', JSON.stringify(workSessions));
+                console.log('Dati salvati in localStorage');
+
+                // Se online, sincronizza con Firestore
+                if (isOnline && userId) {
+                    try {
+                        await db.collection("work_sessions").doc(userId).set({
+                            sessions: workSessions,
+                            last_updated: new Date()
+                        });
+                        console.log('Dati sincronizzati con successo su Firestore');
+                    } catch (error) {
+                        console.error('Errore nel salvataggio su Firestore:', error);
+                        isOnline = false;
+                        updateSyncStatus();
+                    }
+                }
+                updateSyncStatus();
+            }
+
+            async function loadFromStorage() {
+                console.log('Caricamento dati...');
+                // Prima carica da localStorage (cache locale)
+                const localData = localStorage.getItem('workSessions');
+                if (localData) {
+                    workSessions = JSON.parse(localData);
+                    console.log('Dati caricati da localStorage:', Object.keys(workSessions).length, 'giorni');
+                } else {
+                    console.log('Nessun dato in localStorage');
+                }
+
+                // Se online, prova a sincronizzare da Firestore
+                if (isOnline && userId) {
+                    console.log('Tentativo di caricamento da Firestore per utente:', userId);
+                    try {
+                        const doc = await db.collection("work_sessions").doc(userId).get();
+                        if (doc.exists) {
+                            const cloudData = doc.data().sessions;
+                            if (!localData || Object.keys(cloudData).length > Object.keys(workSessions).length) {
+                                console.log('Aggiornamento da cloud: dati più recenti disponibili');
+                                workSessions = cloudData;
+                                localStorage.setItem('workSessions', JSON.stringify(workSessions));
+                            }
+                        } else {
+                            console.log('Nessun dato trovato su Firestore');
+                        }
+                    } catch (error) {
+                        console.error('Errore nel caricamento da Firestore:', error);
+                        isOnline = false;
+                        updateSyncStatus();
+                    }
+                } else {
+                    console.log('Non posso caricare da Firestore - offline o utente non valido');
+                }
+
+                console.log('Caricamento completato. Dati disponibili:', Object.keys(workSessions).length, 'giorni');
+            }
+
+            // --- Funzione per aggiornare l'indicatore di stato ---
+            function updateSyncStatus() {
+                const syncStatusElement = document.getElementById('syncStatus');
+                if (syncStatusElement) {
+                    const statusDot = syncStatusElement.querySelector('div');
+                    const statusText = syncStatusElement.querySelector('span');
+
+                    if (isOnline) {
+                        statusDot.className = 'w-2 h-2 rounded-full bg-green-500';
+                        statusText.className = 'text-green-600';
+                        statusText.textContent = 'Sincronizzato';
+                    } else {
+                        statusDot.className = 'w-2 h-2 rounded-full bg-gray-400';
+                        statusText.className = 'text-gray-500';
+                        statusText.textContent = 'Solo locale';
+                    }
+                }
+            }
+
+            // Inizializza l'applicazione con Firestore
+            // firebase.auth().signInAnonymously().then(async (result) => {
+            //     userId = result.user.uid;
+            //     isOnline = true;
+            //     console.log("Autenticato anonimamente con Firestore. UserID:", userId);
+            //     await loadFromStorage();
+            //     render();
+            // }).catch(error => {
+            //     console.error("Errore di autenticazione anonima con Firestore:", error);
+            //     isOnline = false;
+            //     updateSyncStatus();
+            //     loadFromStorage().then(render);
+            // });
+            (async () => {
+                isOnline = true;
+                console.log("UserID fisso:", userId);
+                await loadFromStorage();
+                render();
+            })();
+
+            // --- Utility ---
+            function formatDateKey(date) {
+                return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+            }
+            function isToday(date) {
+                const today = new Date();
+                return date.getDate() === today.getDate() &&
+                    date.getMonth() === today.getMonth() &&
+                    date.getFullYear() === today.getFullYear();
+            }
+            function getDaysInMonth(date) {
+                const year = date.getFullYear();
+                const month = date.getMonth();
+                const firstDay = new Date(year, month, 1);
+                const lastDay = new Date(year, month + 1, 0);
+                const daysInMonth = lastDay.getDate();
+                const startDayOfWeek = (firstDay.getDay() + 6) % 7;
+                const days = [];
+                // Giorni del mese precedente
+                for (let i = startDayOfWeek - 1; i >= 0; i--) {
+                    const prevDate = new Date(year, month, -i);
+                    days.push({ date: prevDate, isCurrentMonth: false });
+                }
+                // Giorni del mese corrente
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const currentDay = new Date(year, month, day);
+                    days.push({ date: currentDay, isCurrentMonth: true });
+                }
+                // Giorni del mese successivo
+                const remainingDays = 42 - days.length;
+                for (let day = 1; day <= remainingDays; day++) {
+                    const nextDate = new Date(year, month + 1, day);
+                    days.push({ date: nextDate, isCurrentMonth: false });
+                }
+                return days;
+            }
+            function getWeekNumber(date) {
+                const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+                const dayNum = d.getUTCDay() || 7;
+                d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+                const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+                return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+            }
+
+            // --- Analisi dati ---
+            function getAnalyticsData() {
+                const allSessions = [];
+                Object.entries(workSessions).forEach(([dateKey, sessions]) => {
+                    sessions.forEach(session => {
+                        allSessions.push({
+                            ...session,
+                            date: dateKey,
+                            dateObj: new Date(dateKey)
+                        });
+                    });
+                });
+                // Statistiche generali
+                const totalHours = allSessions.reduce((sum, session) => sum + (session.duration || 0), 0);
+                const totalRevenue = allSessions.reduce((sum, session) => sum + (session.earnings || 0), 0);
+                const uniqueClients = [...new Set(allSessions.map(session => session.clientName))];
+                // Dati per cliente
+                const clientData = {};
+                allSessions.forEach(session => {
+                    if (!clientData[session.clientName]) {
+                        clientData[session.clientName] = {
+                            totalHours: 0,
+                            totalRevenue: 0,
+                            interventions: 0,
+                            color: session.clientColor || '#3B82F6'
+                        };
+                    }
+                    clientData[session.clientName].totalHours += session.duration || 0;
+                    clientData[session.clientName].totalRevenue += session.earnings || 0;
+                    clientData[session.clientName].interventions += 1;
+                });
+                // Dati mensili
+                const monthlyData = {};
+                allSessions.forEach(session => {
+                    const monthKey = `${session.dateObj.getFullYear()}-${String(session.dateObj.getMonth() + 1).padStart(2, '0')}`;
+                    if (!monthlyData[monthKey]) {
+                        monthlyData[monthKey] = { hours: 0, revenue: 0 };
+                    }
+                    monthlyData[monthKey].hours += session.duration || 0;
+                    monthlyData[monthKey].revenue += session.earnings || 0;
+                });
+                // Dati settimanali
+                const weeklyData = {};
+                allSessions.forEach(session => {
+                    const weekDay = session.dateObj.getDay();
+                    const weekDayName = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'][weekDay];
+                    if (!weeklyData[weekDayName]) {
+                        weeklyData[weekDayName] = { hours: 0, count: 0 };
+                    }
+                    weeklyData[weekDayName].hours += session.duration || 0;
+                    weeklyData[weekDayName].count += 1;
+                });
+                // Ore per settimana
+                const weekData = {};
+                allSessions.forEach(session => {
+                    const week = getWeekNumber(session.dateObj);
+                    const year = session.dateObj.getFullYear();
+                    const key = `${year}-W${String(week).padStart(2, '0')}`;
+                    if (!weekData[key]) weekData[key] = 0;
+                    weekData[key] += session.duration || 0;
+                });
+
+                // Dati per produttività temporale
+                const hourlyProductivity = {};
+                allSessions.forEach(session => {
+                    const startHour = parseInt(session.startTime.split(':')[0]);
+                    const hourKey = `${startHour}:00`;
+                    if (!hourlyProductivity[hourKey]) {
+                        hourlyProductivity[hourKey] = { hours: 0, revenue: 0, sessions: 0 };
+                    }
+                    hourlyProductivity[hourKey].hours += session.duration || 0;
+                    hourlyProductivity[hourKey].revenue += session.earnings || 0;
+                    hourlyProductivity[hourKey].sessions += 1;
+                });
+
+                // Dati per fascia oraria
+                const timeSlotData = {};
+                allSessions.forEach(session => {
+                    const startHour = parseInt(session.startTime.split(':')[0]);
+                    let timeSlot;
+                    if (startHour >= 6 && startHour < 12) timeSlot = 'Mattina (6-12)';
+                    else if (startHour >= 12 && startHour < 18) timeSlot = 'Pomeriggio (12-18)';
+                    else if (startHour >= 18 && startHour < 24) timeSlot = 'Sera (18-24)';
+                    else timeSlot = 'Notte (0-6)';
+
+                    if (!timeSlotData[timeSlot]) {
+                        timeSlotData[timeSlot] = { hours: 0, revenue: 0, sessions: 0 };
+                    }
+                    timeSlotData[timeSlot].hours += session.duration || 0;
+                    timeSlotData[timeSlot].revenue += session.earnings || 0;
+                    timeSlotData[timeSlot].sessions += 1;
+                });
+
+                // Top 10 sessioni più redditizie
+                const topSessions = allSessions
+                    .sort((a, b) => (b.earnings || 0) - (a.earnings || 0))
+                    .slice(0, 10);
+
+                // Dati per confronto mensile
+                const currentMonth = new Date().getMonth();
+                const currentYear = new Date().getFullYear();
+                const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+                const previousYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+
+                const currentMonthKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+                const previousMonthKey = `${previousYear}-${String(previousMonth + 1).padStart(2, '0')}`;
+
+                const currentMonthData = monthlyData[currentMonthKey] || { hours: 0, revenue: 0 };
+                const previousMonthData = monthlyData[previousMonthKey] || { hours: 0, revenue: 0 };
+
+                // Dati per diversificazione clienti
+                const clientDependency = Object.entries(clientData)
+                    .sort(([, a], [, b]) => b.totalRevenue - a.totalRevenue)
+                    .map(([client, data], index) => ({
+                        client,
+                        revenue: data.totalRevenue,
+                        percentage: (data.totalRevenue / totalRevenue) * 100,
+                        rank: index + 1
+                    }));
+
+                return {
+                    totalHours,
+                    totalRevenue,
+                    uniqueClients,
+                    clientData,
+                    monthlyData,
+                    weeklyData,
+                    weekData,
+                    allSessions,
+                    hourlyProductivity,
+                    timeSlotData,
+                    topSessions,
+                    currentMonthData,
+                    previousMonthData,
+                    clientDependency
+                };
+            }
+
+            // --- Rendering ---
+            function render() {
+                console.log('Rendering applicazione...');
+                if (currentView === 'calendar') {
+                    renderCalendar();
+                } else {
+                    renderAnalytics();
+                }
+                console.log('Rendering completato');
+            }
+
+            function renderCalendar() {
+                const root = document.getElementById('root');
+                root.innerHTML = '';
+                // Header
+                const header = document.createElement('div');
+                header.className = 'bg-gradient-to-r from-blue-600 to-purple-700 rounded-2xl shadow-xl p-6 mb-6 text-center';
+                header.innerHTML = `
+        <h1 class="text-4xl font-bold text-white mb-3">📅 Dashboard Gestione Clienti</h1>
+        <div class="flex items-center justify-center space-x-6">
+            <p class="text-blue-100 text-lg">Gestisci i tuoi clienti e il carico di lavoro</p>
+            <button id="analyticsBtn" class="px-6 py-3 bg-white bg-opacity-20 text-white rounded-xl hover:bg-opacity-30 transition-all font-medium shadow-lg backdrop-blur-sm border border-white border-opacity-30">📊 Analisi</button>
+            <div id="syncStatus" class="flex items-center space-x-2 text-sm">
+                <div class="w-3 h-3 rounded-full ${isOnline ? 'bg-green-400' : 'bg-gray-400'} animate-pulse"></div>
+                <span class="${isOnline ? 'text-green-200' : 'text-gray-300'}">${isOnline ? '🟢 Sincronizzato' : '🔴 Solo locale'}</span>
+            </div>
+        </div>
+    `;
+                root.appendChild(header);
+                header.querySelector('#analyticsBtn').onclick = () => { currentView = 'analytics'; render(); };
+
+                // Tab mesi anno corrente con navigazione anni
+                const monthsTabBar = document.createElement('div');
+                monthsTabBar.className = 'flex items-center justify-between mb-4 bg-white rounded-xl shadow-lg p-4';
+                const year = currentDate.getFullYear();
+
+                // Sezione mesi (centrata)
+                const monthsSection = document.createElement('div');
+                monthsSection.className = 'flex space-x-2 flex-1 justify-center';
+                monthsSection.innerHTML = months.map((m, i) =>
+                    `<button class="px-4 py-2 rounded-lg font-medium text-sm focus:outline-none transition-all ${i === currentDate.getMonth() ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg transform scale-105' : 'text-gray-700 hover:bg-blue-50 hover:shadow-md'}" onclick="selectCalendarMonth(${i}, ${year})">${m}</button>`
+                ).join('');
+
+                // Sezione navigazione anni (destra)
+                const yearSection = document.createElement('div');
+                yearSection.className = 'flex items-center space-x-3 flex-shrink-0';
+                yearSection.innerHTML = `
+        <button id="prevYear" class="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-700 hover:shadow-md">◀</button>
+        <span class="text-xl font-bold text-gray-900 min-w-[80px] bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">${year}</span>
+        <button id="nextYear" class="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-700 hover:shadow-md">▶</button>
+    `;
+
+                monthsTabBar.appendChild(monthsSection);
+                monthsTabBar.appendChild(yearSection);
+                root.appendChild(monthsTabBar);
+
+                // Eventi navigazione anni
+                monthsTabBar.querySelector('#prevYear').onclick = () => {
+                    currentDate.setFullYear(currentDate.getFullYear() - 1);
+                    render();
+                };
+                monthsTabBar.querySelector('#nextYear').onclick = () => {
+                    currentDate.setFullYear(currentDate.getFullYear() + 1);
+                    render();
+                };
+
+                // Calendario
+                const calendar = document.createElement('div');
+                calendar.className = 'bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100';
+                // Week days
+                let weekHeader = '<div class="grid grid-cols-7 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">';
+                weekDays.forEach(day => {
+                    weekHeader += `<div class="p-4 text-center font-bold text-gray-700 border-r last:border-r-0 text-lg">${day}</div>`;
+                });
+                weekHeader += '</div>';
+                calendar.innerHTML = weekHeader;
+                // Days grid
+                const days = getDaysInMonth(currentDate);
+                let daysGrid = '<div class="grid grid-cols-7">';
+                days.forEach((day, idx) => {
+                    const dateKey = formatDateKey(day.date);
+                    const sessions = workSessions[dateKey] || [];
+                    const isTodayDate = isToday(day.date);
+                    
+                    daysGrid += `
+        <div class="min-h-[140px] border-r border-b last:border-r-0 p-3 cursor-pointer transition-all hover:bg-blue-50 ${!day.isCurrentMonth ? 'bg-gray-50 text-gray-400' : 'bg-white'} ${isTodayDate ? 'bg-gradient-to-br from-blue-100 to-blue-200 ring-2 ring-blue-400 shadow-lg' : ''}"
+            data-datekey="${dateKey}"
+            ${day.isCurrentMonth ? `ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, '${dateKey}')"` : 'style="pointer-events:none;opacity:0.5;"'}>
+            <div class="flex justify-between items-start mb-3">
+                <span class="text-lg font-bold ${isTodayDate ? 'text-blue-800' : 'text-gray-800'}">${day.date.getDate()}</span>
+                ${isTodayDate ? '<span class="text-xs bg-blue-600 text-white px-2 py-1 rounded-full">OGGI</span>' : ''}
+            </div>
+            ${sessions.length > 0 ? sessions.slice(0, 3).map((s, idx) => {
+                        const bgColor = s.clientColor || '#3B82F6';
+                        const textColor = getContrastColor(bgColor);
+                        return `<div class="text-sm p-3 rounded-xl shadow-md mb-2 cursor-move relative group border border-white border-opacity-50"
+                    draggable="true"
+                    ondragstart="handleDragStart(event, ${idx}, '${dateKey}')"
+                    ondragend="handleDragEnd(event)"
+                    style="background: linear-gradient(135deg, ${bgColor}, ${bgColor}dd); color: ${textColor}">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <div class="font-bold text-base mb-1 flex items-center">
+                                    <span class="mr-2">👤</span>
+                                    ${s.clientName}
+                                </div>
+                                ${s.attivita ? `<div class="text-xs font-medium mb-1 opacity-90 flex items-center">
+                                    <span class="mr-1">⚡</span>
+                                    ${s.attivita.length > 30 ? s.attivita.substring(0, 30) + '...' : s.attivita}
+                                </div>` : ''}
+                                <div class="text-xs opacity-90 flex items-center">
+                                    <span class="mr-1">🕐</span>
+                                    ${s.startTime}-${s.endTime}
+                                </div>
+                                ${s.earnings ? `<div class="text-xs font-bold mt-1 flex items-center">
+                                    <span class="mr-1">€</span>
+                                    ${s.earnings.toFixed(2)}
+                                </div>` : ''}
+                            </div>
+                            <div class="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2">
+                                <button onclick="editSession('${dateKey}', ${idx})" class="p-1 rounded-lg hover:bg-white hover:bg-opacity-20 transition-colors" title="Modifica">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                </button>
+                                <button onclick="deleteSessionFromCalendar('${dateKey}', ${idx})" class="p-1 rounded-lg hover:bg-white hover:bg-opacity-20 transition-colors" title="Elimina">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.035 21H7.965a2 2 0 01-1.997-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>`;
+                    }).join('') : ''}
+            ${sessions.length > 3 ? `<div class="text-xs text-gray-600 text-center bg-gray-100 rounded-lg py-1 font-medium">+${sessions.length - 3} altri</div>` : ''}
+        </div>
+        `;
+                });
+                daysGrid += '</div>';
+                calendar.innerHTML += daysGrid;
+                root.appendChild(calendar);
+                // Eventi click giorno
+                calendar.querySelectorAll('[data-datekey]').forEach(cell => {
+                    cell.onclick = () => openSessionModal(cell.getAttribute('data-datekey'));
+                });
+            }
+
+            function renderAnalytics() {
+                const root = document.getElementById('root');
+                root.innerHTML = '';
+                const analyticsData = getAnalyticsData();
+                // Header
+                const header = document.createElement('div');
+                header.className = 'bg-white rounded-2xl shadow-xl p-6 mb-6 flex items-center justify-between';
+                header.innerHTML = `
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Analisi Dati</h1>
+            <p class="text-gray-600">Statistiche e grafici sulle sessioni di lavoro</p>
+        </div>
+        <button id="calendarBtn" class="ml-4 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all font-medium shadow-lg">Torna al Calendario</button>
+    `;
+                root.appendChild(header);
+                header.querySelector('#calendarBtn').onclick = () => { currentView = 'calendar'; render(); };
+
+                // Riepilogo Generale
+                const summary = document.createElement('div');
+                summary.className = 'mb-8';
+                summary.innerHTML = `
+        <h2 class="text-2xl font-bold text-gray-900 mb-4">Riepilogo Generale</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-gradient-to-r from-blue-500 to-blue-700 text-white rounded-2xl p-6 shadow-xl flex items-center justify-between">
+                            <div>
+                    <div class="text-blue-100 text-sm font-medium mb-1">Ore Totali Lavorate</div>
+                    <div class="text-4xl font-bold">${analyticsData.totalHours.toFixed(1)}</div>
+                            </div>
+                <svg class="w-10 h-10 ml-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+                        </div>
+            <div class="bg-gradient-to-r from-green-500 to-green-700 text-white rounded-2xl p-6 shadow-xl flex items-center justify-between">
+                            <div>
+                    <div class="text-green-100 text-sm font-medium mb-1">Fatturato Totale</div>
+                    <div class="text-4xl font-bold">€${analyticsData.totalRevenue.toFixed(2)}</div>
+                            </div>
+                <svg class="w-10 h-10 ml-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 10h12"/><path d="M4 14h9"/><path d="M19 6a7.7 7.7 0 0 0-5.2-2A7.9 7.9 0 0 0 6 12c0 4.4 3.5 8 7.8 8 2 0 3.8-.8 5.2-2"/></svg>
+                        </div>
+            <div class="bg-gradient-to-r from-purple-500 to-purple-700 text-white rounded-2xl p-6 shadow-xl flex items-center justify-between">
+                            <div>
+                    <div class="text-purple-100 text-sm font-medium mb-1">Numero Clienti</div>
+                    <div class="text-4xl font-bold">${analyticsData.uniqueClients.length}</div>
+                            </div>
+                <svg class="w-10 h-10 ml-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        </div>
+                    </div>
+    `;
+                root.appendChild(summary);
+
+                // Tab bar
+                const tabBar = document.createElement('div');
+                tabBar.className = 'flex space-x-2 border-b mb-6 bg-white rounded-2xl shadow-xl px-6 pt-4';
+                const tabNames = [
+                    'Allocazione Tempo',
+                    'Frequenza Attività',
+                    'Carico Lavoro',
+                    'Redditività',
+                    'Produttività',
+                    'Diversificazione'
+                ];
+                tabBar.innerHTML = tabNames.map((name, i) =>
+                    `<button class="px-4 py-2 font-medium focus:outline-none ${analyticsTab === i ? 'tab-active' : 'text-gray-500 hover:text-blue-600'}" onclick="setAnalyticsTab(${i})">${name}</button>`
+                ).join('');
+                root.appendChild(tabBar);
+
+                // Sezioni
+                const section = document.createElement('div');
+                section.className = 'mt-4';
+                if (analyticsTab === 0) {
+                    renderTabAllocazioneTempo(section, analyticsData);
+                } else if (analyticsTab === 1) {
+                    renderTabFrequenzaAttivita(section, analyticsData);
+                } else if (analyticsTab === 2) {
+                    renderTabCaricoLavoro(section, analyticsData);
+                } else if (analyticsTab === 3) {
+                    renderTabRedditivita(section, analyticsData);
+                } else if (analyticsTab === 4) {
+                    renderTabProduttivita(section, analyticsData);
+                } else if (analyticsTab === 5) {
+                    renderTabDiversificazione(section, analyticsData);
+                }
+                root.appendChild(section);
+            }
+
+            // --- Tab 1: Allocazione Tempo ---
+            function renderTabAllocazioneTempo(container, analyticsData) {
+                container.innerHTML = `
+        <h2 class="text-xl font-bold mb-2">1. Analisi dell'Allocazione del Tempo per Cliente</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-1">
+            <div class="bg-white rounded-2xl shadow-xl p-2">
+                <h3 class="text-lg font-semibold mb-2">Ore Totali per Cliente</h3>
+                <canvas id="pieChart" width="600" height="320" style="width:600px;height:320px;max-width:100%;"></canvas>
+                            </div>
+            <div class="bg-white rounded-2xl shadow-xl p-2 overflow-x-auto">
+                <h3 class="text-lg font-semibold mb-2">Dettaglio Ore e Fatturato</h3>
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="bg-gray-50">
+                            <th class="p-2 text-left font-semibold">CLIENTE</th>
+                            <th class="p-2 text-left font-semibold">ORE TOTALI</th>
+                            <th class="p-2 text-left font-semibold">FATTURATO (€)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${Object.entries(analyticsData.clientData)
+                            .sort(([, a], [, b]) => b.totalRevenue - a.totalRevenue)
+                            .map(([client, data]) => `
+                            <tr class="border-b">
+                                <td class="p-2 font-medium">${client}</td>
+                                <td class="p-2">${data.totalHours.toFixed(2)}</td>
+                                <td class="p-2 text-green-600 font-semibold">€${data.totalRevenue.toFixed(2)}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                            </div>
+                            </div>
+    `;
+                // Pie chart
+                setTimeout(() => {
+                    const clientNames = Object.keys(analyticsData.clientData);
+                    const pieData = {
+                        labels: clientNames,
+                        datasets: [{
+                            data: clientNames.map(name => analyticsData.clientData[name].totalHours),
+                            backgroundColor: clientNames.map(name => analyticsData.clientData[name].color)
+                        }]
+                    };
+                    new Chart(document.getElementById('pieChart'), {
+                        type: 'pie',
+                        data: pieData,
+                        options: {
+                            responsive: false,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { position: 'bottom' },
+                                datalabels: {
+                                    anchor: 'center',
+                                    align: 'center',
+                                    offset: 0,
+                                    formatter: function (value, context) {
+                                        return value;
+                                    },
+                                    color: '#1F2937',
+                                    font: {
+                                        weight: 'bold',
+                                        size: 12
+                                    },
+                                    textStrokeColor: 'white',
+                                    textStrokeWidth: 2
+                                }
+                            }
+                        }
+                    });
+                }, 10);
+            }
+
+            // --- Tab 2: Frequenza Attività ---
+            function renderTabFrequenzaAttivita(container, analyticsData) {
+                container.innerHTML = `
+        <h2 class="text-xl font-bold mb-4">2. Frequenza e Tipologia delle Attività</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white rounded-2xl shadow-xl p-6">
+                <h3 class="text-lg font-semibold mb-4">Numero di Interventi per Cliente</h3>
+                <canvas id="barChart" height="200"></canvas>
+                                    </div>
+            <div class="bg-white rounded-2xl shadow-xl p-6 overflow-x-auto">
+                <h3 class="text-lg font-semibold mb-4">Dettaglio Interventi</h3>
+                <table class="w-full text-sm">
+                                            <thead>
+                        <tr class="bg-gray-50">
+                            <th class="p-3 text-left font-semibold">CLIENTE</th>
+                            <th class="p-3 text-left font-semibold">NUMERO INTERVENTI</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                        ${Object.entries(analyticsData.clientData)
+                        .sort(([, a], [, b]) => b.interventions - a.interventions)
+                        .map(([client, data]) => `
+                            <tr class="border-b">
+                                <td class="p-3 font-medium">${client}</td>
+                                <td class="p-3">${data.interventions}</td>
+                                                    </tr>
+                        `).join('')}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+    `;
+                // Bar chart
+                setTimeout(() => {
+                    // Ordina i clienti per numero di interventi (dal più grande al più piccolo)
+                    const sortedClients = Object.entries(analyticsData.clientData)
+                        .sort(([, a], [, b]) => b.interventions - a.interventions);
+                    
+                    const clientNames = sortedClients.map(([name]) => name);
+                    const barData = {
+                        labels: clientNames,
+                        datasets: [{
+                            label: 'Numero Interventi',
+                            data: sortedClients.map(([, data]) => data.interventions),
+                            backgroundColor: sortedClients.map(([, data]) => data.color)
+                        }]
+                    };
+                    new Chart(document.getElementById('barChart'), {
+                        type: 'bar',
+                        data: barData,
+                        options: {
+                            layout: {
+                                padding: {
+                                    top: 20
+                                }
+                            },
+                            scales: { y: { beginAtZero: true } },
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: { enabled: false },
+                                datalabels: {
+                                    anchor: 'end',
+                                    align: 'top',
+                                    offset: 4,
+                                    formatter: function (value) {
+                                        return value;
+                                    },
+                                    color: '#374151',
+                                    font: {
+                                        weight: 'bold',
+                                        size: 11
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }, 10);
+            }
+
+            // --- Tab 3: Carico Lavoro ---
+            function renderTabCaricoLavoro(container, analyticsData) {
+                // Calcolo dati settimanali
+                // Ordina le settimane in modo cronologico (YYYY-Wxx)
+                const weekKeys = Object.keys(analyticsData.weekData).sort((a, b) => {
+                    const [ay, aw] = a.split('-W').map(Number);
+                    const [by, bw] = b.split('-W').map(Number);
+                    if (ay !== by) return ay - by;
+                    return aw - bw;
+                });
+                // Crea etichette solo con il numero della settimana
+                const weekLabels = weekKeys.map(key => {
+                    const [, weekNum] = key.split('-W').map(Number);
+                    return `Sett. ${weekNum}`;
+                });
+                const weekValues = weekKeys.map(w => analyticsData.weekData[w]);
+                // Calcolo dati per giorno della settimana
+                const weekDayLabels = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
+                const weekDayValues = weekDayLabels.map(day => analyticsData.weeklyData[day] ? (analyticsData.weeklyData[day].hours / analyticsData.weeklyData[day].count) : 0);
+                // Calcolo clienti più redditizi
+                const topClients = Object.entries(analyticsData.clientData)
+                    .sort(([, a], [, b]) => b.totalRevenue - a.totalRevenue)
+                    .slice(0, 10);
+                // Genera tutti i mesi dell'anno corrente (anche quelli con 0 attività)
+                const currentYear = new Date().getFullYear();
+                const allMonthsKeys = [];
+                for (let i = 1; i <= 12; i++) {
+                    const monthKey = `${currentYear}-${i.toString().padStart(2, '0')}`;
+                    allMonthsKeys.push(monthKey);
+                }
+                
+                // Crea etichette per tutti i mesi
+                const monthLabels = allMonthsKeys.map(key => {
+                    const [, month] = key.split('-').map(Number);
+                    return months[month - 1]; // months array è 0-based, quindi month-1
+                });
+                
+                // Usa allMonthsKeys invece di monthsKeys per includere tutti i mesi
+                const monthsKeys = allMonthsKeys;
+                container.innerHTML = `
+        <h2 class="text-xl font-bold mb-4">3. Analisi del Carico di Lavoro e Pianificazione</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div class="bg-white rounded-2xl shadow-xl p-6">
+                <h3 class="text-lg font-semibold mb-4">Carico di Lavoro Mensile (Ore)</h3>
+                <canvas id="lineChart" height="200"></canvas>
+            </div>
+            <div class="bg-white rounded-2xl shadow-xl p-6">
+                <h3 class="text-lg font-semibold mb-4">Carico di Lavoro per Giorno della Settimana (Ore Medie)</h3>
+                <canvas id="barWeekDayChart" height="200"></canvas>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white rounded-2xl shadow-xl p-6">
+                <h3 class="text-lg font-semibold mb-4">Ore Lavorate per Settimana</h3>
+                <canvas id="barWeekChart" height="200"></canvas>
+            </div>
+            <div class="bg-white rounded-2xl shadow-xl p-6">
+                <h3 class="text-lg font-semibold mb-4">Fatturato per Mese</h3>
+                <canvas id="barMonthRevenueChart" height="200"></canvas>
+            </div>
+        </div>
+    `;
+                setTimeout(() => {
+                    // Line chart: Carico di lavoro mensile
+                    new Chart(document.getElementById('lineChart'), {
+                        type: 'line',
+                        data: {
+                            labels: monthLabels,
+                            datasets: [{
+                                label: 'Ore Mensili',
+                                data: monthsKeys.map(m => analyticsData.monthlyData[m] ? analyticsData.monthlyData[m].hours : 0),
+                                borderColor: '#10B981',
+                                backgroundColor: 'rgba(16,185,129,0.2)',
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            layout: {
+                                padding: {
+                                    top: 20
+                                }
+                            },
+                            scales: { y: { beginAtZero: true } },
+                            plugins: {
+                                datalabels: {
+                                    anchor: 'end',
+                                    align: 'top',
+                                    offset: 8,
+                                    formatter: function (value) {
+                                        return value;
+                                    },
+                                    color: '#1F2937',
+                                    font: {
+                                        weight: 'bold',
+                                        size: 12
+                                    },
+                                    backgroundColor: 'rgba(255,255,255,0.8)',
+                                    borderRadius: 4,
+                                    padding: { top: 2, bottom: 2, left: 4, right: 4 }
+                                }
+                            }
+                        }
+                    });
+                    // Bar chart: Carico per giorno settimana
+                    new Chart(document.getElementById('barWeekDayChart'), {
+                        type: 'bar',
+                        data: {
+                            labels: weekDayLabels,
+                            datasets: [{
+                                label: 'Ore Medie',
+                                data: weekDayValues,
+                                backgroundColor: weekDayLabels.map((_, i) => barColors[i % barColors.length])
+                            }]
+                        },
+                        options: {
+                            layout: {
+                                padding: {
+                                    top: 20
+                                }
+                            },
+                            scales: { y: { beginAtZero: true } },
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: { enabled: false },
+                                datalabels: {
+                                    anchor: 'end',
+                                    align: 'top',
+                                    offset: 4,
+                                    formatter: function (value) {
+                                        return value.toFixed(1);
+                                    },
+                                    color: '#374151',
+                                    font: {
+                                        weight: 'bold',
+                                        size: 11
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    // Bar chart: Ore per settimana
+                    new Chart(document.getElementById('barWeekChart'), {
+                        type: 'bar',
+                        data: {
+                            labels: weekLabels,
+                            datasets: [{
+                                label: 'Ore per Settimana',
+                                data: weekValues,
+                                backgroundColor: weekLabels.map((_, i) => barColors[i % barColors.length])
+                            }]
+                        },
+                        options: {
+                            layout: {
+                                padding: {
+                                    top: 20
+                                }
+                            },
+                            scales: { y: { beginAtZero: true } },
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: { enabled: false },
+                                datalabels: {
+                                    anchor: 'end',
+                                    align: 'top',
+                                    offset: 4,
+                                    formatter: function (value) {
+                                        return value.toFixed(1);
+                                    },
+                                    color: '#374151',
+                                    font: {
+                                        weight: 'bold',
+                                        size: 11
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    // Bar chart: Fatturato per mese
+                    new Chart(document.getElementById('barMonthRevenueChart'), {
+                        type: 'bar',
+                        data: {
+                            labels: monthLabels,
+                            datasets: [{
+                                label: 'Fatturato Mensile (€)',
+                                data: monthsKeys.map(m => analyticsData.monthlyData[m] ? analyticsData.monthlyData[m].revenue : 0),
+                                backgroundColor: monthLabels.map((_, i) => barColors[i % barColors.length])
+                            }]
+                        },
+                        options: {
+                            layout: {
+                                padding: {
+                                    top: 20
+                                }
+                            },
+                            scales: { y: { beginAtZero: true } },
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: { enabled: false },
+                                datalabels: {
+                                    anchor: 'end',
+                                    align: 'top',
+                                    offset: 4,
+                                    formatter: function (value) {
+                                        return '€' + value.toFixed(0);
+                                    },
+                                    color: '#374151',
+                                    font: {
+                                        weight: 'bold',
+                                        size: 11
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }, 10);
+            }
+
+            // --- Tab 4: Redditività ---
+            function renderTabRedditivita(container, analyticsData) {
+                // Calcolo valori medi
+                const clientData = analyticsData.clientData;
+                const revenues = Object.values(clientData).map(c => c.totalRevenue);
+                const totalRevenue = revenues.reduce((sum, r) => sum + r, 0);
+                const avgRevenuePerClient = totalRevenue / revenues.length;
+
+                // Calcolo ore e ricavi medi per sessione
+                const totalSessions = analyticsData.allSessions.length;
+                const avgHoursPerSession = analyticsData.totalHours / totalSessions;
+                const avgRevenuePerSession = analyticsData.totalRevenue / totalSessions;
+
+                // Calcolo produttività oraria
+                const hourlyProductivityLabels = Object.keys(analyticsData.hourlyProductivity).sort((a, b) => {
+                    const hourA = parseInt(a.split(':')[0]);
+                    const hourB = parseInt(b.split(':')[0]);
+                    return hourA - hourB;
+                });
+                const hourlyProductivityValues = hourlyProductivityLabels.map(hour => {
+                    const data = analyticsData.hourlyProductivity[hour];
+                    return data.revenue / data.hours;
+                });
+
+                // Ordina le sessioni più redditizie
+                const topSessions = analyticsData.topSessions.map(s => ({
+                    client: s.clientName,
+                    revenue: s.earnings,
+                    date: s.date
+                }));
+
+                container.innerHTML = `
+        <h2 class="text-xl font-bold mb-4">4. Analisi della Redditività</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div class="bg-white rounded-2xl shadow-xl p-6">
+                <h3 class="text-lg font-semibold mb-4">Clienti più Redditizi</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="bg-gray-50">
+                                <th class="p-3 text-left font-semibold">POSIZIONE</th>
+                                <th class="p-3 text-left font-semibold">CLIENTE</th>
+                                <th class="p-3 text-left font-semibold">FATTURATO TOTALE (€)</th>
+                                <th class="p-3 text-left font-semibold">% SUL TOTALE</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${Object.entries(analyticsData.clientData)
+                                .sort(([, a], [, b]) => b.totalRevenue - a.totalRevenue)
+                                .map(([client, data], index) => `
+                                <tr class="border-b">
+                                    <td class="p-3 font-bold text-center">${index + 1}</td>
+                                    <td class="p-3 font-medium">${client}</td>
+                                    <td class="p-3 font-semibold text-green-600">€${data.totalRevenue.toFixed(2)}</td>
+                                    <td class="p-3 font-medium">${((data.totalRevenue / analyticsData.totalRevenue) * 100).toFixed(1)}%</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="bg-white rounded-2xl shadow-xl p-6">
+                <h3 class="text-lg font-semibold mb-4">Matrice Valore/Impegno Cliente</h3>
+                <div class="space-y-4">
+                    <!-- Grafico Matrice -->
+                    <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                        <canvas id="valueEffortMatrix" width="400" height="300"></canvas>
+                    </div>
+                    
+                    <!-- Legenda Categorie Clienti -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-3">
+                            <div class="flex items-center space-x-2 mb-2">
+                                <div class="w-4 h-4 bg-green-500 rounded-full"></div>
+                                <h4 class="font-semibold text-green-800">Clienti Ideali</h4>
+                            </div>
+                            <p class="text-sm text-green-700">Alto Valore/Basso Impegno<br>Da coltivare e mantenere</p>
+                        </div>
+                        
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <div class="flex items-center space-x-2 mb-2">
+                                <div class="w-4 h-4 bg-blue-500 rounded-full"></div>
+                                <h4 class="font-semibold text-blue-800">Clienti Strategici</h4>
+                            </div>
+                            <p class="text-sm text-blue-700">Alto Valore/Alto Impegno<br>Importanti ma richiedono risorse</p>
+                        </div>
+                        
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                            <div class="flex items-center space-x-2 mb-2">
+                                <div class="w-4 h-4 bg-yellow-500 rounded-full"></div>
+                                <h4 class="font-semibold text-yellow-800">Clienti Marginali</h4>
+                            </div>
+                            <p class="text-sm text-yellow-700">Basso Valore/Basso Impegno<br>Gestire con minimo sforzo</p>
+                        </div>
+                        
+                        <div class="bg-red-50 border border-red-200 rounded-lg p-3">
+                            <div class="flex items-center space-x-2 mb-2">
+                                <div class="w-4 h-4 bg-red-500 rounded-full"></div>
+                                <h4 class="font-semibold text-red-800">Clienti Critici</h4>
+                            </div>
+                            <p class="text-sm text-red-700">Basso Valore/Alto Impegno<br>Valutare rinegoziazione</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-2xl shadow-xl p-6">
+            <h3 class="text-lg font-semibold mb-4">Top 10 Sessioni più Redditizie</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="bg-gray-50">
+                            <th class="p-3 text-left font-semibold">CLIENTE</th>
+                            <th class="p-3 text-left font-semibold">DATA</th>
+                            <th class="p-3 text-left font-semibold">FATTURATO (€)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${topSessions.map(session => `
+                            <tr class="border-b">
+                                <td class="p-3 font-medium">${session.client}</td>
+                                <td class="p-3">${session.date}</td>
+                                <td class="p-3 font-semibold text-green-600">€${session.revenue.toFixed(2)}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+                setTimeout(() => {
+                    // Grafico Matrice Valore/Impegno
+                    setTimeout(() => {
+                        // Calcola i dati per la matrice
+                        const clientMatrixData = [];
+                        Object.entries(analyticsData.clientData).forEach(([clientName, data]) => {
+                            const avgHoursPerSession = data.totalHours / data.interventions;
+                            const avgRevenuePerHour = data.totalRevenue / data.totalHours;
+                            
+                            clientMatrixData.push({
+                                client: clientName,
+                                hours: avgHoursPerSession,
+                                revenue: avgRevenuePerHour,
+                                totalRevenue: data.totalRevenue,
+                                totalHours: data.totalHours
+                            });
+                        });
+
+                        // Crea il grafico scatter plot
+                        const ctx = document.getElementById('valueEffortMatrix');
+                        if (ctx && clientMatrixData.length > 0) {
+                            new Chart(ctx, {
+                                type: 'scatter',
+                                data: {
+                                    datasets: [{
+                                        label: 'Clienti',
+                                        data: clientMatrixData.map(d => ({
+                                            x: d.hours,
+                                            y: d.revenue
+                                        })),
+                                        backgroundColor: clientMatrixData.map(d => {
+                                            // Categorizza i clienti in base a valore e impegno
+                                            const avgHours = 4; // Media delle ore
+                                            const avgRevenue = 50; // Media del fatturato orario
+                                            
+                                            if (d.revenue > avgRevenue && d.hours < avgHours) return '#10B981'; // Verde - Ideali
+                                            if (d.revenue > avgRevenue && d.hours > avgHours) return '#3B82F6'; // Blu - Strategici
+                                            if (d.revenue < avgRevenue && d.hours < avgHours) return '#F59E0B'; // Giallo - Marginali
+                                            return '#EF4444'; // Rosso - Critici
+                                        }),
+                                        pointRadius: 8,
+                                        pointHoverRadius: 12
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    scales: {
+                                        x: {
+                                            title: {
+                                                display: true,
+                                                text: 'Ore Medie per Sessione'
+                                            },
+                                            min: 0,
+                                            max: 8
+                                        },
+                                        y: {
+                                            title: {
+                                                display: true,
+                                                text: 'Fatturato Orario (€)'
+                                            },
+                                            min: 0
+                                        }
+                                    },
+                                    plugins: {
+                                        legend: {
+                                            display: false
+                                        },
+                                        tooltip: {
+                                            callbacks: {
+                                                label: function(context) {
+                                                    const client = clientMatrixData[context.dataIndex];
+                                                    return [
+                                                        `Cliente: ${client.client}`,
+                                                        `Ore medie: ${client.hours.toFixed(1)}`,
+                                                        `Fatturato orario: €${client.revenue.toFixed(2)}`,
+                                                        `Fatturato totale: €${client.totalRevenue.toFixed(2)}`
+                                                    ];
+                                                }
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+                        });
+                    }, 10);
+                }
+
+                // --- Tab 5: Produttività ---
+                function renderTabProduttivita(container, analyticsData) {
+                    const dailyProductivity = {};
+                    analyticsData.allSessions.forEach(s => {
+                        const dateKey = s.date;
+                        if (!dailyProductivity[dateKey]) {
+                            dailyProductivity[dateKey] = { hours: 0, revenue: 0 };
+                        }
+                        dailyProductivity[dateKey].hours += s.duration;
+                        dailyProductivity[dateKey].revenue += s.earnings;
+                    });
+
+                    const dailyProductivityLabels = Object.keys(dailyProductivity).sort();
+                    const dailyHoursData = dailyProductivityLabels.map(d => dailyProductivity[d].hours);
+                    const dailyRevenueData = dailyProductivityLabels.map(d => dailyProductivity[d].revenue);
+
+                    // Dati per fascia oraria
+                    const timeSlotLabels = Object.keys(analyticsData.timeSlotData).sort();
+                    const timeSlotHoursData = timeSlotLabels.map(t => analyticsData.timeSlotData[t].hours);
+                    const timeSlotSessionsData = timeSlotLabels.map(t => analyticsData.timeSlotData[t].sessions);
+
+                    container.innerHTML = `
+        <h2 class="text-xl font-bold mb-4">5. Analisi della Produttività</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white rounded-2xl shadow-xl p-6">
+                <h3 class="text-lg font-semibold mb-4">Ore Lavorate per Fascia Oraria</h3>
+                <canvas id="timeSlotHoursChart" height="200"></canvas>
+            </div>
+            <div class="bg-white rounded-2xl shadow-xl p-6">
+                <h3 class="text-lg font-semibold mb-4">Numero di Sessioni per Fascia Oraria</h3>
+                <canvas id="timeSlotSessionsChart" height="200"></canvas>
+            </div>
+        </div>
+    `;
+                    setTimeout(() => {
+                        // Pie chart: Ore per fascia oraria
+                        new Chart(document.getElementById('timeSlotHoursChart'), {
+                            type: 'pie',
+                            data: {
+                                labels: timeSlotLabels,
+                                datasets: [{
+                                    data: timeSlotHoursData,
+                                    backgroundColor: timeSlotLabels.map((_, i) => barColors[i % barColors.length])
+                                }]
+                            },
+                            options: {
+                                responsive: false,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { position: 'bottom' },
+                                    datalabels: {
+                                        anchor: 'center',
+                                        align: 'center',
+                                        offset: 0,
+                                        formatter: function (value) { return value.toFixed(1); },
+                                        color: '#1F2937',
+                                        font: { weight: 'bold', size: 12 },
+                                        textStrokeColor: 'white',
+                                        textStrokeWidth: 2
+                                    }
+                                }
+                            }
+                        });
+                        // Pie chart: Sessioni per fascia oraria
+                        new Chart(document.getElementById('timeSlotSessionsChart'), {
+                            type: 'pie',
+                            data: {
+                                labels: timeSlotLabels,
+                                datasets: [{
+                                    data: timeSlotSessionsData,
+                                    backgroundColor: timeSlotLabels.map((_, i) => barColors[i % barColors.length])
+                                }]
+                            },
+                            options: {
+                                responsive: false,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { position: 'bottom' },
+                                    datalabels: {
+                                        anchor: 'center',
+                                        align: 'center',
+                                        offset: 0,
+                                        formatter: function (value) { return value; },
+                                        color: '#1F2937',
+                                        font: { weight: 'bold', size: 12 },
+                                        textStrokeColor: 'white',
+                                        textStrokeWidth: 2
+                                    }
+                                }
+                            }
+                        });
+                    }, 10);
+                }
+
+                // --- Tab 6: Diversificazione ---
+                function renderTabDiversificazione(container, analyticsData) {
+                    const clientDependencyData = analyticsData.clientDependency;
+                    const clientDependencyLabels = clientDependencyData.map(d => d.client);
+                    const clientDependencyValues = clientDependencyData.map(d => d.revenue);
+
+                    const revenuePerClient = Object.values(analyticsData.clientData).map(c => c.totalRevenue);
+                    const numClients = Object.keys(analyticsData.clientData).length;
+                    const avgRevenuePerClient = analyticsData.totalRevenue / numClients;
+                    
+                    // Calcolo dell'indice di dipendenza più accurato
+                    let isDiversified = false;
+                    if (numClients === 1) {
+                        // Con un solo cliente, dipendenza è sempre alta
+                        isDiversified = false;
+                    } else if (numClients >= 5) {
+                        // Con 5+ clienti, verifica che nessun cliente rappresenti più del 40% del fatturato
+                        const maxClientPercentage = Math.max(...analyticsData.clientDependency.map(c => c.percentage));
+                        isDiversified = maxClientPercentage < 40;
+                    } else {
+                        // Con 2-4 clienti, verifica che il cliente principale non superi il 60% del fatturato
+                        const maxClientPercentage = Math.max(...analyticsData.clientDependency.map(c => c.percentage));
+                        isDiversified = maxClientPercentage < 60;
+                    }
+
+                    container.innerHTML = `
+        <h2 class="text-xl font-bold mb-4">6. Analisi della Diversificazione del Portafoglio Clienti</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div class="bg-white rounded-2xl shadow-xl p-6 md:col-span-2">
+                <h3 class="text-lg font-semibold mb-4">Ripartizione del Fatturato per Cliente</h3>
+                <canvas id="clientDependencyChart" height="400"></canvas>
+            </div>
+            <div class="bg-white rounded-2xl shadow-xl p-6">
+                <h3 class="text-lg font-semibold mb-4">Indice di Dipendenza</h3>
+                <p class="text-gray-600 mb-2">L'analisi mostra quanto il tuo fatturato dipenda da pochi clienti.</p>
+                <div class="mt-4">
+                    <span class="text-xl font-bold ${isDiversified ? 'text-green-600' : 'text-red-600'}">${isDiversified ? 'Bassa Dipendenza' : 'Alta Dipendenza'}</span>
+                    <p class="text-gray-500 mt-1">${isDiversified ? 'Il tuo fatturato è ben distribuito tra i clienti.' : 'Sei molto dipendente da uno o più clienti, il che può essere un rischio.'}</p>
+                </div>
+                <div class="mt-6">
+                    <h4 class="font-semibold text-gray-700 mb-2">Clienti con la Maggior Incidenza sul Fatturato</h4>
+                    <ul class="space-y-2">
+                        ${clientDependencyData.slice(0, 3).map(d => `
+                            <li class="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+                                <span class="font-medium">${d.client}</span>
+                                <span class="font-bold text-sm">${d.percentage.toFixed(1)}%</span>
+                            </li>
+                        `).join('')}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    `;
+                    setTimeout(() => {
+                        new Chart(document.getElementById('clientDependencyChart'), {
+                            type: 'doughnut',
+                            data: {
+                                labels: clientDependencyLabels,
+                                datasets: [{
+                                    data: clientDependencyValues,
+                                    backgroundColor: clientDependencyLabels.map((_, i) => barColors[i % barColors.length])
+                                }]
+                            },
+                            options: {
+                                responsive: false,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { position: 'bottom' },
+                                    datalabels: {
+                                        formatter: (value, ctx) => {
+                                            let sum = 0;
+                                            let dataArr = ctx.chart.data.datasets[0].data;
+                                            dataArr.map(data => { sum += data; });
+                                            let percentage = (value * 100 / sum).toFixed(1) + "%";
+                                            return percentage;
+                                        },
+                                        color: '#1F2937',
+                                        font: { weight: 'bold', size: 16 },
+                                        textStrokeColor: 'white',
+                                        textStrokeWidth: 2
+                                    }
+                                }
+                            }
+                        });
+                    }, 10);
+                }
+
+                function getContrastColor(hexColor) {
+                    if (!hexColor) return '#000000';
+                    // Calcola il valore di luminosità in base al colore RGB
+                    const r = parseInt(hexColor.slice(1, 3), 16);
+                    const g = parseInt(hexColor.slice(3, 5), 16);
+                    const b = parseInt(hexColor.slice(5, 7), 16);
+                    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+                    // Se la luminosità è bassa (scuro), restituisce bianco, altrimenti nero
+                    return luminance > 0.5 ? '#000000' : '#FFFFFF';
+                }
+
+                function selectCalendarMonth(month, year) {
+                    currentDate.setMonth(month);
+                    currentDate.setFullYear(year);
+                    render();
+                }
+                function setAnalyticsTab(tabIndex) {
+                    analyticsTab = tabIndex;
+                    render();
+                }
+
+                function openSessionModal(dateKey) {
+                    // Apri direttamente la modale di inserimento attività
+                    selectedDateKey = dateKey;
+                    openAddSessionForm();
+                }
+
+                function closeModal() {
+                    const modalRoot = document.getElementById('modal-root');
+                    modalRoot.style.display = 'none';
+                    editingSessionIndex = null;
+                    selectedDateKey = null;
+                    render();
+                }
+
+                function openAddSessionForm(session = null, index = null) {
+                    const modalRoot = document.getElementById('modal-root');
+                    editingSessionIndex = index;
+                    
+                    // Ottieni tutti i clienti esistenti
+                    const existingClients = new Set();
+                    Object.values(workSessions).forEach(sessions => {
+                        sessions.forEach(s => {
+                            if (s.clientName) existingClients.add(s.clientName);
+                        });
+                    });
+
+                    modalRoot.innerHTML = `
+        <div class="fixed inset-0 modal-bg z-50 flex items-center justify-center p-4" onclick="if(event.target === this) closeModal();">
+            <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-lg">
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-1">${session ? '✏️ Modifica Attività' : '➕ Nuova Sessione di Lavoro'}</h3>
+                    <p class="text-gray-600 text-sm">${session ? 'Modifica i dettagli dell\'attività' : 'Inserisci i dettagli della nuova sessione'}</p>
+                </div>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 transition-colors p-2 rounded-lg hover:bg-gray-100">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <form id="sessionForm" onsubmit="event.preventDefault(); handleSessionSubmit(event);" class="space-y-6">
+                <!-- Sezione Cliente - Migliorata -->
+                <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 border border-blue-100">
+                    <div class="flex items-center mb-3">
+                        <span class="text-2xl mr-2">👤</span>
+                        <h4 class="text-lg font-bold text-gray-800">Dettagli Cliente</h4>
+                    </div>
+                    
+                    <!-- Dropdown Cliente -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Seleziona Cliente</label>
+                        <select id="clientDropdown" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg">
+                            <option value="new">➕ Nuovo cliente...</option>
+                            ${Array.from(existingClients).map(client => 
+                                `<option value="${client}" ${session && session.clientName === client ? 'selected' : ''}>${client}</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+                    
+                    <!-- Nome Cliente e Colore -->
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="col-span-2">
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Nome Cliente *</label>
+                            <input type="text" id="clientName" value="${session ? session.clientName : ''}" 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg" 
+                                   placeholder="Inserisci il nome del cliente">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Colore</label>
+                            <input type="color" id="clientColor" value="${session ? session.clientColor : '#3B82F6'}" 
+                                   class="w-full h-12 rounded-lg border border-gray-300 cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sezione Orari - Migliorata -->
+                <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border border-green-100">
+                    <div class="flex items-center mb-3">
+                        <span class="text-2xl mr-2">🕐</span>
+                        <h4 class="text-lg font-bold text-gray-800">Orari Lavoro</h4>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Ora Inizio *</label>
+                            <input type="time" id="startTime" value="${session ? session.startTime : ''}" 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-lg" 
+                                   placeholder="--:--" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Ora Fine *</label>
+                            <input type="time" id="endTime" value="${session ? session.endTime : ''}" 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-lg" 
+                                   placeholder="--:--" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sezione Finanziaria - Migliorata -->
+                <div class="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4 border border-yellow-100">
+                    <div class="flex items-center mb-3">
+                        <span class="text-2xl mr-2">💰</span>
+                        <h4 class="text-lg font-bold text-gray-800">Dettagli Finanziari</h4>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Tariffa Oraria (€)</label>
+                            <input type="number" id="hourlyRate" ${session ? `value="${(session.earnings / session.duration).toFixed(2)}"` : ''} 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 text-lg" 
+                                   step="0.01" min="0" placeholder="es. 50.00">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Aliquota INPS (%)</label>
+                            <input type="number" id="inpsRate" ${session && session.inpsRate ? `value="${session.inpsRate.toFixed(2)}"` : ''} 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 text-lg" 
+                                   step="0.01" min="0" max="100" placeholder="es. 4.00">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sezione Attività - Migliorata -->
+                <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-100">
+                    <div class="flex items-center mb-3">
+                        <span class="text-2xl mr-2">⚡</span>
+                        <h4 class="text-lg font-bold text-gray-800">Descrizione Attività</h4>
+                    </div>
+                    <textarea id="notes" rows="4" 
+                              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-lg" 
+                              placeholder="Descrivi in dettaglio l'attività svolta...">${session ? (session.attivita || '') : ''}</textarea>
+                </div>
+
+                <!-- Pulsanti -->
+                <div class="flex space-x-4 pt-6">
+                    <button type="button" onclick="closeModal()" 
+                            class="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-colors font-medium text-lg">
+                        ❌ Annulla
+                    </button>
+                    <button type="submit" 
+                            class="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-200 font-medium text-lg shadow-lg">
+                        💾 Salva
+                    </button>
+                </div>
+            </form>
+            </div>
+        </div>
+    `;
+                    
+                    modalRoot.style.display = 'block';
+                    
+                    // Aggiungi event listener per il dropdown
+                    const clientDropdown = document.getElementById('clientDropdown');
+                    const clientNameInput = document.getElementById('clientName');
+                    
+                    clientDropdown.addEventListener('change', function() {
+                        if (this.value === 'new') {
+                            clientNameInput.value = '';
+                            clientNameInput.placeholder = 'Inserisci il nome del cliente';
+                            // Reset dei campi quando si sceglie "Nuovo cliente"
+                            document.getElementById('clientColor').value = '#3B82F6';
+                            document.getElementById('hourlyRate').value = '0.00';
+                            document.getElementById('inpsRate').value = '0.00';
+                        } else {
+                            clientNameInput.value = this.value;
+                            
+                            // Trova i dati del cliente selezionato
+                            const selectedClient = this.value;
+                            let clientData = null;
+                            
+                            // Cerca tra tutte le sessioni per trovare i dati più recenti del cliente
+                            Object.values(workSessions).forEach(sessions => {
+                                sessions.forEach(s => {
+                                    if (s.clientName === selectedClient) {
+                                        if (!clientData || (s.hourlyRate && !clientData.hourlyRate)) {
+                                            clientData = s;
+                                        }
+                                    }
+                                });
+                            });
+                            
+                            // Compila i campi con i dati del cliente
+                            if (clientData) {
+                                document.getElementById('clientColor').value = clientData.clientColor || '#3B82F6';
+                                document.getElementById('hourlyRate').value = clientData.hourlyRate ? clientData.hourlyRate.toFixed(2) : '0.00';
+                                document.getElementById('inpsRate').value = clientData.inpsRate ? clientData.inpsRate.toFixed(2) : '0.00';
+                            }
+                        }
+                    });
+                }
+
+                function handleSessionSubmit(event) {
+                    const form = event.target;
+                    const clientName = form.clientName.value.trim();
+                    const startTime = form.startTime.value;
+                    const endTime = form.endTime.value;
+                    const hourlyRate = parseFloat(form.hourlyRate.value) || 0;
+                    const inpsRate = parseFloat(form.inpsRate.value) || 0;
+                    const attivita = form.notes.value.trim();
+                    const clientColor = form.clientColor.value;
+
+                    if (!clientName || !startTime || !endTime) {
+                        alert('Compila tutti i campi obbligatori.');
+                        return;
+                    }
+
+                    const start = new Date(`${selectedDateKey}T${startTime}`);
+                    const end = new Date(`${selectedDateKey}T${endTime}`);
+                    const duration = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+                    
+                    // Calcola il ricavo totale basato sulla tariffa oraria
+                    const earnings = hourlyRate * duration;
+
+                    const newSession = {
+                        clientName,
+                        startTime,
+                        endTime,
+                        duration,
+                        earnings,
+                        clientColor,
+                        hourlyRate,
+                        inpsRate,
+                        attivita
+                    };
+
+                    if (!workSessions[selectedDateKey]) {
+                        workSessions[selectedDateKey] = [];
+                    }
+
+                    if (editingSessionIndex !== null) {
+                        // Modifica sessione esistente
+                        workSessions[selectedDateKey][editingSessionIndex] = newSession;
+                    } else {
+                        // Aggiungi nuova sessione
+                        workSessions[selectedDateKey].push(newSession);
+                    }
+
+                    saveToStorage();
+                    closeModal();
+                    render();
+                }
+
+                function deleteSession(index) {
+                    if (confirm('Sei sicuro di voler eliminare questa sessione?')) {
+                        workSessions[selectedDateKey].splice(index, 1);
+                        if (workSessions[selectedDateKey].length === 0) {
+                            delete workSessions[selectedDateKey];
+                        }
+                        saveToStorage();
+                        openSessionModal(selectedDateKey);
+                    }
+                }
+
+                function renderSessionCard(session, index) {
+                    const bgColor = session.clientColor || '#3B82F6';
+                    const textColor = getContrastColor(bgColor);
+                    return `
+        <div class="flex items-center justify-between p-4 rounded-lg shadow-sm" style="background-color: ${bgColor}; color: ${textColor};">
+            <div>
+                <div class="font-bold text-lg">${session.clientName}</div>
+                ${session.attivita ? `<div class="text-sm font-medium">${session.attivita}</div>` : ''}
+                <div class="text-sm opacity-90">${session.startTime} - ${session.endTime} (${session.duration.toFixed(1)}h)</div>
+            </div>
+            <div class="flex space-x-2">
+                <button onclick="openAddSessionForm(${JSON.stringify(session).replace(/"/g, '&quot;')}, ${index})" class="p-2 rounded-full bg-white bg-opacity-20 hover:bg-opacity-30 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536M16 4l-9 9V17h4l9-9-3.768-3.768z"/></svg>
+                </button>
+                <button onclick="deleteSession(${index})" class="p-2 rounded-full bg-white bg-opacity-20 hover:bg-opacity-30 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.035 21H7.965a2 2 0 01-1.997-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+            </div>
+        </div>
+    `;
+                }
+                // --- Drag & Drop ---
+                let draggedSession = null;
+                let draggedSessionDateKey = null;
+
+                function handleDragStart(event, sessionIndex, dateKey) {
+                    draggedSession = workSessions[dateKey][sessionIndex];
+                    draggedSessionDateKey = dateKey;
+                    event.dataTransfer.effectAllowed = 'move';
+                }
+
+                function handleDragOver(event) {
+                    event.preventDefault();
+                    event.target.closest('div[data-datekey]').classList.add('bg-blue-200');
+                }
+
+                function handleDragLeave(event) {
+                    event.preventDefault();
+                    event.target.closest('div[data-datekey]').classList.remove('bg-blue-200');
+                }
+
+                function handleDrop(event, newDateKey) {
+                    event.preventDefault();
+                    event.target.closest('div[data-datekey]').classList.remove('bg-blue-200');
+
+                    if (draggedSession && draggedSessionDateKey && draggedSessionDateKey !== newDateKey) {
+                        // Rimuovi la sessione dalla data originale
+                        const oldSessions = workSessions[draggedSessionDateKey];
+                        const oldSessionIndex = oldSessions.findIndex(s => s === draggedSession);
+                        if (oldSessionIndex > -1) {
+                            oldSessions.splice(oldSessionIndex, 1);
+                            if (oldSessions.length === 0) {
+                                delete workSessions[draggedSessionDateKey];
+                            }
+                        }
+
+                        // Aggiungi la sessione alla nuova data
+                        if (!workSessions[newDateKey]) {
+                            workSessions[newDateKey] = [];
+                        }
+                        workSessions[newDateKey].push(draggedSession);
+
+                        draggedSession.date = newDateKey;
+
+                        saveToStorage();
+                        render();
+                    }
+                }
+
+                function handleDragEnd(event) {
+                    draggedSession = null;
+                    draggedSessionDateKey = null;
+                    document.querySelectorAll('[data-datekey]').forEach(cell => cell.classList.remove('bg-blue-200'));
+                }
+
+                function editSession(dateKey, sessionIndex) {
+                    event.stopPropagation();
+                    selectedDateKey = dateKey;
+                    const session = workSessions[dateKey][sessionIndex];
+                    openAddSessionForm(session, sessionIndex);
+                }
+
+                function deleteSessionFromCalendar(dateKey, sessionIndex) {
+                    event.stopPropagation();
+                    if (confirm('Sei sicuro di voler eliminare questa sessione?')) {
+                        workSessions[dateKey].splice(sessionIndex, 1);
+                        if (workSessions[dateKey].length === 0) {
+                            delete workSessions[dateKey];
+                        }
+                        saveToStorage();
+                        render();
+                    }
+                }
+
+            </script>
+        </body>
+
+        </html>
