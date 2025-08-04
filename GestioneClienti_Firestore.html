@@ -602,11 +602,13 @@
                         </tr>
                     </thead>
                     <tbody>
-                        ${Object.entries(analyticsData.clientData).map(([client, data]) => `
+                        ${Object.entries(analyticsData.clientData)
+                            .sort(([, a], [, b]) => b.totalRevenue - a.totalRevenue)
+                            .map(([client, data]) => `
                             <tr class="border-b">
                                 <td class="p-2 font-medium">${client}</td>
                                 <td class="p-2">${data.totalHours.toFixed(2)}</td>
-                                <td class="p-2 text-green-600 font-semibold">${data.totalRevenue.toFixed(2)}</td>
+                                <td class="p-2 text-green-600 font-semibold">€${data.totalRevenue.toFixed(2)}</td>
                             </tr>
                         `).join('')}
                     </tbody>
@@ -1191,16 +1193,6 @@
 
                 container.innerHTML = `
         <h2 class="text-xl font-bold mb-4">5. Analisi della Produttività</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div class="bg-white rounded-2xl shadow-xl p-6">
-                <h3 class="text-lg font-semibold mb-4">Ore Lavorate per Giorno</h3>
-                <canvas id="dailyHoursChart" height="200"></canvas>
-            </div>
-            <div class="bg-white rounded-2xl shadow-xl p-6">
-                <h3 class="text-lg font-semibold mb-4">Fatturato per Giorno</h3>
-                <canvas id="dailyRevenueChart" height="200"></canvas>
-            </div>
-        </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="bg-white rounded-2xl shadow-xl p-6">
                 <h3 class="text-lg font-semibold mb-4">Ore Lavorate per Fascia Oraria</h3>
@@ -1213,60 +1205,6 @@
         </div>
     `;
                 setTimeout(() => {
-                    // Bar chart: Ore lavorate per giorno
-                    new Chart(document.getElementById('dailyHoursChart'), {
-                        type: 'bar',
-                        data: {
-                            labels: dailyProductivityLabels,
-                            datasets: [{
-                                label: 'Ore Lavorate',
-                                data: dailyHoursData,
-                                backgroundColor: '#3B82F6'
-                            }]
-                        },
-                        options: {
-                            layout: { padding: { top: 20 } },
-                            scales: { y: { beginAtZero: true } },
-                            plugins: {
-                                legend: { display: false },
-                                datalabels: {
-                                    anchor: 'end',
-                                    align: 'top',
-                                    offset: 4,
-                                    formatter: (value) => value.toFixed(1),
-                                    color: '#374151',
-                                    font: { weight: 'bold', size: 11 }
-                                }
-                            }
-                        }
-                    });
-                    // Bar chart: Fatturato per giorno
-                    new Chart(document.getElementById('dailyRevenueChart'), {
-                        type: 'bar',
-                        data: {
-                            labels: dailyProductivityLabels,
-                            datasets: [{
-                                label: 'Fatturato',
-                                data: dailyRevenueData,
-                                backgroundColor: '#10B981'
-                            }]
-                        },
-                        options: {
-                            layout: { padding: { top: 20 } },
-                            scales: { y: { beginAtZero: true } },
-                            plugins: {
-                                legend: { display: false },
-                                datalabels: {
-                                    anchor: 'end',
-                                    align: 'top',
-                                    offset: 4,
-                                    formatter: (value) => '€' + value.toFixed(0),
-                                    color: '#374151',
-                                    font: { weight: 'bold', size: 11 }
-                                }
-                            }
-                        }
-                    });
                     // Pie chart: Ore per fascia oraria
                     new Chart(document.getElementById('timeSlotHoursChart'), {
                         type: 'pie',
