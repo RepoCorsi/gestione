@@ -169,6 +169,19 @@
                 }
             }
 
+            // Inizializza l'applicazione con Firestore
+            // firebase.auth().signInAnonymously().then(async (result) => {
+            //     userId = result.user.uid;
+            //     isOnline = true;
+            //     console.log("Autenticato anonimamente con Firestore. UserID:", userId);
+            //     await loadFromStorage();
+            //     render();
+            // }).catch(error => {
+            //     console.error("Errore di autenticazione anonima con Firestore:", error);
+            //     isOnline = false;
+            //     updateSyncStatus();
+            //     loadFromStorage().then(render);
+            // });
             (async () => {
                 isOnline = true;
                 console.log("UserID fisso:", userId);
@@ -591,11 +604,13 @@
                         </tr>
                     </thead>
                     <tbody>
-                        ${Object.entries(analyticsData.clientData).map(([client, data]) => `
+                        ${Object.entries(analyticsData.clientData)
+                            .sort(([, a], [, b]) => b.totalRevenue - a.totalRevenue)
+                            .map(([client, data]) => `
                             <tr class="border-b">
                                 <td class="p-2 font-medium">${client}</td>
                                 <td class="p-2">${data.totalHours.toFixed(2)}</td>
-                                <td class="p-2 text-green-600 font-semibold">${data.totalRevenue.toFixed(2)}</td>
+                                <td class="p-2 text-green-600 font-semibold">€${data.totalRevenue.toFixed(2)}</td>
                             </tr>
                         `).join('')}
                     </tbody>
@@ -676,13 +691,17 @@
     `;
                 // Bar chart
                 setTimeout(() => {
-                    const clientNames = Object.keys(analyticsData.clientData);
+                    // Ordina i clienti per numero di interventi (dal più grande al più piccolo)
+                    const sortedClients = Object.entries(analyticsData.clientData)
+                        .sort(([, a], [, b]) => b.interventions - a.interventions);
+                    
+                    const clientNames = sortedClients.map(([name]) => name);
                     const barData = {
                         labels: clientNames,
                         datasets: [{
                             label: 'Numero Interventi',
-                            data: clientNames.map(name => analyticsData.clientData[name].interventions),
-                            backgroundColor: clientNames.map(name => analyticsData.clientData[name].color)
+                            data: sortedClients.map(([, data]) => data.interventions),
+                            backgroundColor: sortedClients.map(([, data]) => data.color)
                         }]
                     };
                     new Chart(document.getElementById('barChart'), {
@@ -740,18 +759,22 @@
                 const topClients = Object.entries(analyticsData.clientData)
                     .sort(([, a], [, b]) => b.totalRevenue - a.totalRevenue)
                     .slice(0, 10);
-                // Ordina i mesi in modo cronologico (YYYY-MM)
-                const monthsKeys = Object.keys(analyticsData.monthlyData).sort((a, b) => {
-                    const [ay, am] = a.split('-').map(Number);
-                    const [by, bm] = b.split('-').map(Number);
-                    if (ay !== by) return ay - by;
-                    return am - bm;
-                });
-                // Crea etichette solo con i nomi dei mesi
-                const monthLabels = monthsKeys.map(key => {
+                // Genera tutti i mesi dell'anno corrente (anche quelli con 0 attività)
+                const currentYear = new Date().getFullYear();
+                const allMonthsKeys = [];
+                for (let i = 1; i <= 12; i++) {
+                    const monthKey = `${currentYear}-${i.toString().padStart(2, '0')}`;
+                    allMonthsKeys.push(monthKey);
+                }
+                
+                // Crea etichette per tutti i mesi
+                const monthLabels = allMonthsKeys.map(key => {
                     const [, month] = key.split('-').map(Number);
                     return months[month - 1]; // months array è 0-based, quindi month-1
                 });
+                
+                // Usa allMonthsKeys invece di monthsKeys per includere tutti i mesi
+                const monthsKeys = allMonthsKeys;
                 container.innerHTML = `
         <h2 class="text-xl font-bold mb-4">3. Analisi del Carico di Lavoro e Pianificazione</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -783,7 +806,7 @@
                             labels: monthLabels,
                             datasets: [{
                                 label: 'Ore Mensili',
-                                data: monthsKeys.map(m => analyticsData.monthlyData[m].hours),
+                                data: monthsKeys.map(m => analyticsData.monthlyData[m] ? analyticsData.monthlyData[m].hours : 0),
                                 borderColor: '#10B981',
                                 backgroundColor: 'rgba(16,185,129,0.2)',
                                 fill: true
@@ -897,7 +920,7 @@
                             labels: monthLabels,
                             datasets: [{
                                 label: 'Fatturato Mensile (€)',
-                                data: monthsKeys.map(m => analyticsData.monthlyData[m].revenue),
+                                data: monthsKeys.map(m => analyticsData.monthlyData[m] ? analyticsData.monthlyData[m].revenue : 0),
                                 backgroundColor: monthLabels.map((_, i) => barColors[i % barColors.length])
                             }]
                         },
@@ -965,8 +988,31 @@
         <h2 class="text-xl font-bold mb-4">4. Analisi della Redditività</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div class="bg-white rounded-2xl shadow-xl p-6">
-                <h3 class="text-lg font-semibold mb-4">Redditività Oraria Media per Fascia Oraria</h3>
-                <canvas id="hourlyProductivityChart" height="200"></canvas>
+                <h3 class="text-lg font-semibold mb-4">Clienti più Redditizi</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="bg-gray-50">
+                                <th class="p-3 text-left font-semibold">POSIZIONE</th>
+                                <th class="p-3 text-left font-semibold">CLIENTE</th>
+                                <th class="p-3 text-left font-semibold">FATTURATO TOTALE (€)</th>
+                                <th class="p-3 text-left font-semibold">% SUL TOTALE</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${Object.entries(analyticsData.clientData)
+                                .sort(([, a], [, b]) => b.totalRevenue - a.totalRevenue)
+                                .map(([client, data], index) => `
+                                <tr class="border-b">
+                                    <td class="p-3 font-bold text-center">${index + 1}</td>
+                                    <td class="p-3 font-medium">${client}</td>
+                                    <td class="p-3 font-semibold text-green-600">€${data.totalRevenue.toFixed(2)}</td>
+                                    <td class="p-3 font-medium">${((data.totalRevenue / analyticsData.totalRevenue) * 100).toFixed(1)}%</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
             </div>
             <div class="bg-white rounded-2xl shadow-xl p-6">
                 <h3 class="text-lg font-semibold mb-4">Matrice Valore/Impegno Cliente</h3>
@@ -975,7 +1021,7 @@
                     <div class="bg-gray-50 rounded-lg p-4 mb-4">
                         <canvas id="valueEffortMatrix" width="400" height="300"></canvas>
                     </div>
-
+                    
                     <!-- Legenda Categorie Clienti -->
                     <div class="grid grid-cols-2 gap-3">
                         <div class="bg-green-50 border border-green-200 rounded-lg p-3">
@@ -985,7 +1031,7 @@
                             </div>
                             <p class="text-sm text-green-700">Alto Valore/Basso Impegno<br>Da coltivare e mantenere</p>
                         </div>
-
+                        
                         <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
                             <div class="flex items-center space-x-2 mb-2">
                                 <div class="w-4 h-4 bg-blue-500 rounded-full"></div>
@@ -993,7 +1039,7 @@
                             </div>
                             <p class="text-sm text-blue-700">Alto Valore/Alto Impegno<br>Importanti ma richiedono risorse</p>
                         </div>
-
+                        
                         <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
                             <div class="flex items-center space-x-2 mb-2">
                                 <div class="w-4 h-4 bg-yellow-500 rounded-full"></div>
@@ -1001,7 +1047,7 @@
                             </div>
                             <p class="text-sm text-yellow-700">Basso Valore/Basso Impegno<br>Gestire con minimo sforzo</p>
                         </div>
-
+                        
                         <div class="bg-red-50 border border-red-200 rounded-lg p-3">
                             <div class="flex items-center space-x-2 mb-2">
                                 <div class="w-4 h-4 bg-red-500 rounded-full"></div>
@@ -1038,53 +1084,6 @@
         </div>
     `;
                 setTimeout(() => {
-                    // Line chart: Redditività oraria media
-                    new Chart(document.getElementById('hourlyProductivityChart'), {
-                        type: 'line',
-                        data: {
-                            labels: hourlyProductivityLabels,
-                            datasets: [{
-                                label: 'Redditività Oraria Media (€/h)',
-                                data: hourlyProductivityValues,
-                                borderColor: '#06B6D4',
-                                backgroundColor: 'rgba(6, 182, 212, 0.2)',
-                                fill: true
-                            }]
-                        },
-                        options: {
-                            layout: {
-                                padding: {
-                                    top: 60,
-                                    bottom: 20,
-                                    left: 10,
-                                    right: 10
-                                }
-                            },
-                            scales: {
-                                y: { beginAtZero: true }
-                            },
-                            plugins: {
-                                legend: {
-                                    position: 'bottom',
-                                    labels: {
-                                        padding: 20
-                                    }
-                                },
-                                datalabels: {
-                                    anchor: 'center',
-                                    align: 'bottom',
-                                    offset: -10,
-                                    formatter: function (value) { return '€' + value.toFixed(1); },
-                                    color: '#1F2937',
-                                    font: { weight: 'bold', size: 10 },
-                                    backgroundColor: 'rgba(255,255,255,0.9)',
-                                    borderRadius: 3,
-                                    padding: { top: 1, bottom: 1, left: 3, right: 3 }
-                                }
-                            }
-                        }
-                    });
-
                     // Grafico Matrice Valore/Impegno
                     setTimeout(() => {
                         // Calcola i dati per la matrice
@@ -1092,7 +1091,7 @@
                         Object.entries(analyticsData.clientData).forEach(([clientName, data]) => {
                             const avgHoursPerSession = data.totalHours / data.interventions;
                             const avgRevenuePerHour = data.totalRevenue / data.totalHours;
-
+                            
                             clientMatrixData.push({
                                 client: clientName,
                                 hours: avgHoursPerSession,
@@ -1118,7 +1117,7 @@
                                             // Categorizza i clienti in base a valore e impegno
                                             const avgHours = 4; // Media delle ore
                                             const avgRevenue = 50; // Media del fatturato orario
-
+                                            
                                             if (d.revenue > avgRevenue && d.hours < avgHours) return '#10B981'; // Verde - Ideali
                                             if (d.revenue > avgRevenue && d.hours > avgHours) return '#3B82F6'; // Blu - Strategici
                                             if (d.revenue < avgRevenue && d.hours < avgHours) return '#F59E0B'; // Giallo - Marginali
@@ -1154,7 +1153,7 @@
                                         },
                                         tooltip: {
                                             callbacks: {
-                                                label: function (context) {
+                                                label: function(context) {
                                                     const client = clientMatrixData[context.dataIndex];
                                                     return [
                                                         `Cliente: ${client.client}`,
@@ -1196,16 +1195,6 @@
 
                 container.innerHTML = `
         <h2 class="text-xl font-bold mb-4">5. Analisi della Produttività</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div class="bg-white rounded-2xl shadow-xl p-6">
-                <h3 class="text-lg font-semibold mb-4">Ore Lavorate per Giorno</h3>
-                <canvas id="dailyHoursChart" height="200"></canvas>
-            </div>
-            <div class="bg-white rounded-2xl shadow-xl p-6">
-                <h3 class="text-lg font-semibold mb-4">Fatturato per Giorno</h3>
-                <canvas id="dailyRevenueChart" height="200"></canvas>
-            </div>
-        </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="bg-white rounded-2xl shadow-xl p-6">
                 <h3 class="text-lg font-semibold mb-4">Ore Lavorate per Fascia Oraria</h3>
@@ -1218,60 +1207,6 @@
         </div>
     `;
                 setTimeout(() => {
-                    // Bar chart: Ore lavorate per giorno
-                    new Chart(document.getElementById('dailyHoursChart'), {
-                        type: 'bar',
-                        data: {
-                            labels: dailyProductivityLabels,
-                            datasets: [{
-                                label: 'Ore Lavorate',
-                                data: dailyHoursData,
-                                backgroundColor: '#3B82F6'
-                            }]
-                        },
-                        options: {
-                            layout: { padding: { top: 20 } },
-                            scales: { y: { beginAtZero: true } },
-                            plugins: {
-                                legend: { display: false },
-                                datalabels: {
-                                    anchor: 'end',
-                                    align: 'top',
-                                    offset: 4,
-                                    formatter: (value) => value.toFixed(1),
-                                    color: '#374151',
-                                    font: { weight: 'bold', size: 11 }
-                                }
-                            }
-                        }
-                    });
-                    // Bar chart: Fatturato per giorno
-                    new Chart(document.getElementById('dailyRevenueChart'), {
-                        type: 'bar',
-                        data: {
-                            labels: dailyProductivityLabels,
-                            datasets: [{
-                                label: 'Fatturato',
-                                data: dailyRevenueData,
-                                backgroundColor: '#10B981'
-                            }]
-                        },
-                        options: {
-                            layout: { padding: { top: 20 } },
-                            scales: { y: { beginAtZero: true } },
-                            plugins: {
-                                legend: { display: false },
-                                datalabels: {
-                                    anchor: 'end',
-                                    align: 'top',
-                                    offset: 4,
-                                    formatter: (value) => '€' + value.toFixed(0),
-                                    color: '#374151',
-                                    font: { weight: 'bold', size: 11 }
-                                }
-                            }
-                        }
-                    });
                     // Pie chart: Ore per fascia oraria
                     new Chart(document.getElementById('timeSlotHoursChart'), {
                         type: 'pie',
@@ -1340,7 +1275,7 @@
                 const revenuePerClient = Object.values(analyticsData.clientData).map(c => c.totalRevenue);
                 const numClients = Object.keys(analyticsData.clientData).length;
                 const avgRevenuePerClient = analyticsData.totalRevenue / numClients;
-
+                
                 // Calcolo dell'indice di dipendenza più accurato
                 let isDiversified = false;
                 if (numClients === 1) {
@@ -1358,10 +1293,10 @@
 
                 container.innerHTML = `
         <h2 class="text-xl font-bold mb-4">6. Analisi della Diversificazione del Portafoglio Clienti</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div class="bg-white rounded-2xl shadow-xl p-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div class="bg-white rounded-2xl shadow-xl p-6 md:col-span-2">
                 <h3 class="text-lg font-semibold mb-4">Ripartizione del Fatturato per Cliente</h3>
-                <canvas id="clientDependencyChart" height="200"></canvas>
+                <canvas id="clientDependencyChart" height="400"></canvas>
             </div>
             <div class="bg-white rounded-2xl shadow-xl p-6">
                 <h3 class="text-lg font-semibold mb-4">Indice di Dipendenza</h3>
@@ -1408,7 +1343,7 @@
                                         return percentage;
                                     },
                                     color: '#1F2937',
-                                    font: { weight: 'bold', size: 12 },
+                                    font: { weight: 'bold', size: 16 },
                                     textStrokeColor: 'white',
                                     textStrokeWidth: 2
                                 }
@@ -1456,7 +1391,7 @@
             function openAddSessionForm(session = null, index = null) {
                 const modalRoot = document.getElementById('modal-root');
                 editingSessionIndex = index;
-
+                
                 // Ottieni tutti i clienti esistenti
                 const existingClients = new Set();
                 Object.values(workSessions).forEach(sessions => {
@@ -1470,14 +1405,14 @@
             <div class="bg-white rounded-2xl shadow-lg p-6 w-full max-w-md">
             <!-- Header -->
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold text-gray-900">Nuova Sessione di Lavoro</h3>
+                <h3 class="text-xl font-bold text-gray-900">${session ? 'Modifica Attività' : 'Nuova Sessione di Lavoro'}</h3>
                 <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                 </button>
             </div>
-
+            
             <form id="sessionForm" onsubmit="event.preventDefault(); handleSessionSubmit(event);" class="space-y-6">
                 <!-- Sezione Cliente -->
                 <div class="space-y-2">
@@ -1490,28 +1425,28 @@
                             <label class="block text-sm font-medium text-gray-700">Colore Cliente</label>
                         </div>
                     </div>
-
+                    
                     <!-- Dropdown Cliente e Colore Cliente in riga -->
                     <div class="flex items-end space-x-3">
                         <div class="relative w-2/3">
                             <select id="clientDropdown" class="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 <option value="new">Nuovo cliente...</option>
-                                ${Array.from(existingClients).map(client =>
-                    `<option value="${client}" ${session && session.clientName === client ? 'selected' : ''}>${client}</option>`
-                ).join('')}
+                                ${Array.from(existingClients).map(client => 
+                                    `<option value="${client}" ${session && session.clientName === client ? 'selected' : ''}>${client}</option>`
+                                ).join('')}
                             </select>
                         </div>
                         <div class="w-1/3 flex justify-center">
-                            <input type="color" id="clientColor" value="${session ? session.clientColor : '#3B82F6'}"
+                            <input type="color" id="clientColor" value="${session ? session.clientColor : '#3B82F6'}" 
                                    class="w-full h-12 rounded border border-gray-300 cursor-pointer">
                         </div>
                     </div>
-
+                    
                     <!-- Campo Nome Cliente -->
                     <div class="flex items-end space-x-3">
                         <div class="w-2/3">
-                            <input type="text" id="clientName" value="${session ? session.clientName : ''}"
-                                   class="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            <input type="text" id="clientName" value="${session ? session.clientName : ''}" 
+                                   class="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
                                    placeholder="Inserisci il nome del cliente">
                         </div>
                         <div class="w-1/3"></div>
@@ -1523,14 +1458,14 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Ora Inizio *</label>
-                            <input type="time" id="startTime" value="${session ? session.startTime : ''}"
-                                   class="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            <input type="time" id="startTime" value="${session ? session.startTime : ''}" 
+                                   class="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
                                    placeholder="--:--" required>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Ora Fine *</label>
-                            <input type="time" id="endTime" value="${session ? session.endTime : ''}"
-                                   class="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            <input type="time" id="endTime" value="${session ? session.endTime : ''}" 
+                                   class="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
                                    placeholder="--:--" required>
                         </div>
                     </div>
@@ -1541,15 +1476,15 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Tariffa Oraria (€)</label>
-                            <input type="number" id="hourlyRate" value="${session ? (session.earnings / session.duration).toFixed(2) : ''}"
-                                   class="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                   step="0.01" min="0" placeholder="0.00">
+                            <input type="number" id="hourlyRate" ${session ? `value="${(session.earnings / session.duration).toFixed(2)}"` : ''} 
+                                   class="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                   step="0.01" min="0" placeholder="es. 50.00">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Aliquota INPS (%)</label>
-                            <input type="number" id="inpsRate" value="${session ? (session.inpsRate || 0).toFixed(2) : '0.00'}"
-                                   class="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                   step="0.01" min="0" max="100">
+                            <input type="number" id="inpsRate" ${session && session.inpsRate ? `value="${session.inpsRate.toFixed(2)}"` : ''} 
+                                   class="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                   step="0.01" min="0" max="100" placeholder="es. 4.00">
                         </div>
                     </div>
                 </div>
@@ -1557,18 +1492,18 @@
                 <!-- Sezione Note -->
                 <div class="space-y-2">
                     <label class="block text-sm font-medium text-gray-700">Note</label>
-                    <textarea id="notes" rows="3"
-                              class="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    <textarea id="notes" rows="3" 
+                              class="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
                               placeholder="Note aggiuntive..."></textarea>
                 </div>
 
                 <!-- Pulsanti -->
                 <div class="flex space-x-3 pt-4">
-                    <button type="button" onclick="closeModal()"
+                    <button type="button" onclick="closeModal()" 
                             class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors font-medium">
                         Annulla
                     </button>
-                    <button type="submit"
+                    <button type="submit" 
                             class="flex-1 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-md hover:from-blue-600 hover:to-purple-700 transition-all duration-200 font-medium">
                         Salva
                     </button>
@@ -1577,28 +1512,28 @@
             </div>
         </div>
     `;
-
+                
                 modalRoot.style.display = 'block';
-
+                
                 // Aggiungi event listener per il dropdown
                 const clientDropdown = document.getElementById('clientDropdown');
                 const clientNameInput = document.getElementById('clientName');
-
-                clientDropdown.addEventListener('change', function () {
+                
+                clientDropdown.addEventListener('change', function() {
                     if (this.value === 'new') {
                         clientNameInput.value = '';
                         clientNameInput.placeholder = 'Inserisci il nome del cliente';
                         // Reset dei campi quando si sceglie "Nuovo cliente"
                         document.getElementById('clientColor').value = '#3B82F6';
-                        document.getElementById('hourlyRate').value = '';
-                        document.getElementById('inpsRate').value = '';
+                        document.getElementById('hourlyRate').value = '0.00';
+                        document.getElementById('inpsRate').value = '0.00';
                     } else {
                         clientNameInput.value = this.value;
-
+                        
                         // Trova i dati del cliente selezionato
                         const selectedClient = this.value;
                         let clientData = null;
-
+                        
                         // Cerca tra tutte le sessioni per trovare i dati più recenti del cliente
                         Object.values(workSessions).forEach(sessions => {
                             sessions.forEach(s => {
@@ -1609,7 +1544,7 @@
                                 }
                             });
                         });
-
+                        
                         // Compila i campi con i dati del cliente
                         if (clientData) {
                             document.getElementById('clientColor').value = clientData.clientColor || '#3B82F6';
@@ -1638,7 +1573,7 @@
                 const start = new Date(`${selectedDateKey}T${startTime}`);
                 const end = new Date(`${selectedDateKey}T${endTime}`);
                 const duration = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-
+                
                 // Calcola il ricavo totale basato sulla tariffa oraria
                 const earnings = hourlyRate * duration;
 
