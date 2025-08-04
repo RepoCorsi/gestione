@@ -1063,16 +1063,31 @@
                             }]
                         },
                         options: {
-                            layout: { padding: { top: 40 } },
-                            scales: { y: { beginAtZero: true } },
+                            layout: { 
+                                padding: { 
+                                    top: 60,
+                                    bottom: 20,
+                                    left: 10,
+                                    right: 10
+                                } 
+                            },
+                            scales: { 
+                                y: { beginAtZero: true } 
+                            },
                             plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 20
+                                    }
+                                },
                                 datalabels: {
-                                    anchor: 'end',
-                                    align: 'top',
-                                    offset: 4,
+                                    anchor: 'center',
+                                    align: 'bottom',
+                                    offset: -10,
                                     formatter: function (value) { return '€' + value.toFixed(1); },
                                     color: '#1F2937',
-                                    font: { weight: 'bold', size: 11 },
+                                    font: { weight: 'bold', size: 10 },
                                     backgroundColor: 'rgba(255,255,255,0.9)',
                                     borderRadius: 3,
                                     padding: { top: 1, bottom: 1, left: 3, right: 3 }
