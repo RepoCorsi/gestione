@@ -387,15 +387,15 @@
                 root.innerHTML = '';
                 // Header
                 const header = document.createElement('div');
-                header.className = 'bg-white rounded-2xl shadow-xl p-6 mb-6 text-center';
+                header.className = 'bg-gradient-to-r from-blue-600 to-purple-700 rounded-2xl shadow-xl p-6 mb-6 text-center';
                 header.innerHTML = `
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">Dashboard Analisi Clienti</h1>
-        <div class="flex items-center justify-center space-x-4">
-            <p class="text-gray-600">Gestisci i tuoi clienti e il carico di lavoro</p>
-            <button id="analyticsBtn" class="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all font-medium shadow-lg">Analisi</button>
+        <h1 class="text-4xl font-bold text-white mb-3">📅 Dashboard Gestione Clienti</h1>
+        <div class="flex items-center justify-center space-x-6">
+            <p class="text-blue-100 text-lg">Gestisci i tuoi clienti e il carico di lavoro</p>
+            <button id="analyticsBtn" class="px-6 py-3 bg-white bg-opacity-20 text-white rounded-xl hover:bg-opacity-30 transition-all font-medium shadow-lg backdrop-blur-sm border border-white border-opacity-30">📊 Analisi</button>
             <div id="syncStatus" class="flex items-center space-x-2 text-sm">
-                <div class="w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}"></div>
-                <span class="${isOnline ? 'text-green-600' : 'text-gray-500'}">${isOnline ? 'Sincronizzato' : 'Solo locale'}</span>
+                <div class="w-3 h-3 rounded-full ${isOnline ? 'bg-green-400' : 'bg-gray-400'} animate-pulse"></div>
+                <span class="${isOnline ? 'text-green-200' : 'text-gray-300'}">${isOnline ? '🟢 Sincronizzato' : '🔴 Solo locale'}</span>
             </div>
         </div>
     `;
@@ -404,23 +404,23 @@
 
                 // Tab mesi anno corrente con navigazione anni
                 const monthsTabBar = document.createElement('div');
-                monthsTabBar.className = 'flex items-center justify-between mb-2 bg-gray-50 rounded-lg p-2';
+                monthsTabBar.className = 'flex items-center justify-between mb-4 bg-white rounded-xl shadow-lg p-4';
                 const year = currentDate.getFullYear();
 
                 // Sezione mesi (centrata)
                 const monthsSection = document.createElement('div');
-                monthsSection.className = 'flex space-x-1 flex-1 justify-center';
+                monthsSection.className = 'flex space-x-2 flex-1 justify-center';
                 monthsSection.innerHTML = months.map((m, i) =>
-                    `<button class="px-3 py-1 rounded-lg font-medium text-sm focus:outline-none transition-colors ${i === currentDate.getMonth() ? 'bg-blue-500 text-white shadow' : 'text-gray-700 hover:bg-blue-100'}" onclick="selectCalendarMonth(${i}, ${year})">${m}</button>`
+                    `<button class="px-4 py-2 rounded-lg font-medium text-sm focus:outline-none transition-all ${i === currentDate.getMonth() ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg transform scale-105' : 'text-gray-700 hover:bg-blue-50 hover:shadow-md'}" onclick="selectCalendarMonth(${i}, ${year})">${m}</button>`
                 ).join('');
 
                 // Sezione navigazione anni (destra)
                 const yearSection = document.createElement('div');
-                yearSection.className = 'flex items-center space-x-2 flex-shrink-0';
+                yearSection.className = 'flex items-center space-x-3 flex-shrink-0';
                 yearSection.innerHTML = `
-        <button id="prevYear" class="p-1 rounded hover:bg-gray-200 transition-colors text-gray-700">←</button>
-        <span class="text-lg font-semibold text-gray-900 min-w-[60px]">${year}</span>
-        <button id="nextYear" class="p-1 rounded hover:bg-gray-200 transition-colors text-gray-700">→</button>
+        <button id="prevYear" class="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-700 hover:shadow-md">◀</button>
+        <span class="text-xl font-bold text-gray-900 min-w-[80px] bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">${year}</span>
+        <button id="nextYear" class="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-700 hover:shadow-md">▶</button>
     `;
 
                 monthsTabBar.appendChild(monthsSection);
@@ -439,11 +439,11 @@
 
                 // Calendario
                 const calendar = document.createElement('div');
-                calendar.className = 'bg-white rounded-2xl shadow-xl overflow-hidden';
+                calendar.className = 'bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100';
                 // Week days
-                let weekHeader = '<div class="grid grid-cols-7 bg-gray-50 border-b">';
+                let weekHeader = '<div class="grid grid-cols-7 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">';
                 weekDays.forEach(day => {
-                    weekHeader += `<div class="p-4 text-center font-semibold text-gray-700 border-r last:border-r-0">${day}</div>`;
+                    weekHeader += `<div class="p-4 text-center font-bold text-gray-700 border-r last:border-r-0 text-lg">${day}</div>`;
                 });
                 weekHeader += '</div>';
                 calendar.innerHTML = weekHeader;
@@ -453,35 +453,51 @@
                 days.forEach((day, idx) => {
                     const dateKey = formatDateKey(day.date);
                     const sessions = workSessions[dateKey] || [];
+                    const isTodayDate = isToday(day.date);
+                    
                     daysGrid += `
-        <div class="min-h-[100px] border-r border-b last:border-r-0 p-2 cursor-pointer transition-all hover:bg-blue-50 ${!day.isCurrentMonth ? 'bg-gray-50 text-gray-400' : 'bg-white'} ${isToday(day.date) ? 'bg-blue-100 ring-2 ring-blue-300' : ''}"
+        <div class="min-h-[140px] border-r border-b last:border-r-0 p-3 cursor-pointer transition-all hover:bg-blue-50 ${!day.isCurrentMonth ? 'bg-gray-50 text-gray-400' : 'bg-white'} ${isTodayDate ? 'bg-gradient-to-br from-blue-100 to-blue-200 ring-2 ring-blue-400 shadow-lg' : ''}"
             data-datekey="${dateKey}"
             ${day.isCurrentMonth ? `ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, '${dateKey}')"` : 'style="pointer-events:none;opacity:0.5;"'}>
-            <div class="flex justify-between items-start mb-2">
-                <span class="text-sm font-medium ${isToday(day.date) ? 'text-blue-700' : ''}">${day.date.getDate()}</span>
+            <div class="flex justify-between items-start mb-3">
+                <span class="text-lg font-bold ${isTodayDate ? 'text-blue-800' : 'text-gray-800'}">${day.date.getDate()}</span>
+                ${isTodayDate ? '<span class="text-xs bg-blue-600 text-white px-2 py-1 rounded-full">OGGI</span>' : ''}
             </div>
-            ${sessions.length > 0 ? sessions.slice(0, 2).map((s, idx) => {
+            ${sessions.length > 0 ? sessions.slice(0, 3).map((s, idx) => {
                         const bgColor = s.clientColor || '#3B82F6';
                         const textColor = getContrastColor(bgColor);
-                        return `<div class="text-xs p-2 rounded-lg shadow-sm mb-1 cursor-move relative group"
+                        return `<div class="text-sm p-3 rounded-xl shadow-md mb-2 cursor-move relative group border border-white border-opacity-50"
                     draggable="true"
                     ondragstart="handleDragStart(event, ${idx}, '${dateKey}')"
                     ondragend="handleDragEnd(event)"
-                    style="background-color: ${bgColor}; color: ${textColor}">
+                    style="background: linear-gradient(135deg, ${bgColor}, ${bgColor}dd); color: ${textColor}">
                         <div class="flex justify-between items-start">
-                            <div>
-                                <div class="font-medium">${s.clientName}</div>
-                                ${s.attivita ? `<div class="text-[10px] font-medium">${s.attivita}</div>` : ''}
-                                <div class="text-[10px] opacity-90">${s.startTime}-${s.endTime}</div>
+                            <div class="flex-1">
+                                <div class="font-bold text-base mb-1 flex items-center">
+                                    <span class="mr-2">👤</span>
+                                    ${s.clientName}
+                                </div>
+                                ${s.attivita ? `<div class="text-xs font-medium mb-1 opacity-90 flex items-center">
+                                    <span class="mr-1">⚡</span>
+                                    ${s.attivita.length > 30 ? s.attivita.substring(0, 30) + '...' : s.attivita}
+                                </div>` : ''}
+                                <div class="text-xs opacity-90 flex items-center">
+                                    <span class="mr-1">🕐</span>
+                                    ${s.startTime}-${s.endTime}
+                                </div>
+                                ${s.earnings ? `<div class="text-xs font-bold mt-1 flex items-center">
+                                    <span class="mr-1">€</span>
+                                    ${s.earnings.toFixed(2)}
+                                </div>` : ''}
                             </div>
-                            <div class="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onclick="editSession('${dateKey}', ${idx})" class="p-1 rounded hover:bg-white hover:bg-opacity-20 transition-colors" title="Modifica">
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <div class="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2">
+                                <button onclick="editSession('${dateKey}', ${idx})" class="p-1 rounded-lg hover:bg-white hover:bg-opacity-20 transition-colors" title="Modifica">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                     </svg>
                                 </button>
-                                <button onclick="deleteSessionFromCalendar('${dateKey}', ${idx})" class="p-1 rounded hover:bg-white hover:bg-opacity-20 transition-colors" title="Elimina">
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <button onclick="deleteSessionFromCalendar('${dateKey}', ${idx})" class="p-1 rounded-lg hover:bg-white hover:bg-opacity-20 transition-colors" title="Elimina">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.035 21H7.965a2 2 0 01-1.997-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                     </svg>
                                 </button>
@@ -489,7 +505,7 @@
                         </div>
                     </div>`;
                     }).join('') : ''}
-            ${sessions.length > 2 ? `<div class="text-xs text-gray-500 text-center">+${sessions.length - 2} altri</div>` : ''}
+            ${sessions.length > 3 ? `<div class="text-xs text-gray-600 text-center bg-gray-100 rounded-lg py-1 font-medium">+${sessions.length - 3} altri</div>` : ''}
         </div>
         `;
                 });
@@ -1166,35 +1182,34 @@
                                             }
                                         }
                                     }
-                                }
-                            });
+                                });
+                            }
+                        }, 20);
+                    }, 10);
+                }
+
+                // --- Tab 5: Produttività ---
+                function renderTabProduttivita(container, analyticsData) {
+                    const dailyProductivity = {};
+                    analyticsData.allSessions.forEach(s => {
+                        const dateKey = s.date;
+                        if (!dailyProductivity[dateKey]) {
+                            dailyProductivity[dateKey] = { hours: 0, revenue: 0 };
                         }
-                    }, 20);
-                }, 10);
-            }
+                        dailyProductivity[dateKey].hours += s.duration;
+                        dailyProductivity[dateKey].revenue += s.earnings;
+                    });
 
-            // --- Tab 5: Produttività ---
-            function renderTabProduttivita(container, analyticsData) {
-                const dailyProductivity = {};
-                analyticsData.allSessions.forEach(s => {
-                    const dateKey = s.date;
-                    if (!dailyProductivity[dateKey]) {
-                        dailyProductivity[dateKey] = { hours: 0, revenue: 0 };
-                    }
-                    dailyProductivity[dateKey].hours += s.duration;
-                    dailyProductivity[dateKey].revenue += s.earnings;
-                });
+                    const dailyProductivityLabels = Object.keys(dailyProductivity).sort();
+                    const dailyHoursData = dailyProductivityLabels.map(d => dailyProductivity[d].hours);
+                    const dailyRevenueData = dailyProductivityLabels.map(d => dailyProductivity[d].revenue);
 
-                const dailyProductivityLabels = Object.keys(dailyProductivity).sort();
-                const dailyHoursData = dailyProductivityLabels.map(d => dailyProductivity[d].hours);
-                const dailyRevenueData = dailyProductivityLabels.map(d => dailyProductivity[d].revenue);
+                    // Dati per fascia oraria
+                    const timeSlotLabels = Object.keys(analyticsData.timeSlotData).sort();
+                    const timeSlotHoursData = timeSlotLabels.map(t => analyticsData.timeSlotData[t].hours);
+                    const timeSlotSessionsData = timeSlotLabels.map(t => analyticsData.timeSlotData[t].sessions);
 
-                // Dati per fascia oraria
-                const timeSlotLabels = Object.keys(analyticsData.timeSlotData).sort();
-                const timeSlotHoursData = timeSlotLabels.map(t => analyticsData.timeSlotData[t].hours);
-                const timeSlotSessionsData = timeSlotLabels.map(t => analyticsData.timeSlotData[t].sessions);
-
-                container.innerHTML = `
+                    container.innerHTML = `
         <h2 class="text-xl font-bold mb-4">5. Analisi della Produttività</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="bg-white rounded-2xl shadow-xl p-6">
@@ -1207,92 +1222,92 @@
             </div>
         </div>
     `;
-                setTimeout(() => {
-                    // Pie chart: Ore per fascia oraria
-                    new Chart(document.getElementById('timeSlotHoursChart'), {
-                        type: 'pie',
-                        data: {
-                            labels: timeSlotLabels,
-                            datasets: [{
-                                data: timeSlotHoursData,
-                                backgroundColor: timeSlotLabels.map((_, i) => barColors[i % barColors.length])
-                            }]
-                        },
-                        options: {
-                            responsive: false,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: { position: 'bottom' },
-                                datalabels: {
-                                    anchor: 'center',
-                                    align: 'center',
-                                    offset: 0,
-                                    formatter: function (value) { return value.toFixed(1); },
-                                    color: '#1F2937',
-                                    font: { weight: 'bold', size: 12 },
-                                    textStrokeColor: 'white',
-                                    textStrokeWidth: 2
+                    setTimeout(() => {
+                        // Pie chart: Ore per fascia oraria
+                        new Chart(document.getElementById('timeSlotHoursChart'), {
+                            type: 'pie',
+                            data: {
+                                labels: timeSlotLabels,
+                                datasets: [{
+                                    data: timeSlotHoursData,
+                                    backgroundColor: timeSlotLabels.map((_, i) => barColors[i % barColors.length])
+                                }]
+                            },
+                            options: {
+                                responsive: false,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { position: 'bottom' },
+                                    datalabels: {
+                                        anchor: 'center',
+                                        align: 'center',
+                                        offset: 0,
+                                        formatter: function (value) { return value.toFixed(1); },
+                                        color: '#1F2937',
+                                        font: { weight: 'bold', size: 12 },
+                                        textStrokeColor: 'white',
+                                        textStrokeWidth: 2
+                                    }
                                 }
                             }
-                        }
-                    });
-                    // Pie chart: Sessioni per fascia oraria
-                    new Chart(document.getElementById('timeSlotSessionsChart'), {
-                        type: 'pie',
-                        data: {
-                            labels: timeSlotLabels,
-                            datasets: [{
-                                data: timeSlotSessionsData,
-                                backgroundColor: timeSlotLabels.map((_, i) => barColors[i % barColors.length])
-                            }]
-                        },
-                        options: {
-                            responsive: false,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: { position: 'bottom' },
-                                datalabels: {
-                                    anchor: 'center',
-                                    align: 'center',
-                                    offset: 0,
-                                    formatter: function (value) { return value; },
-                                    color: '#1F2937',
-                                    font: { weight: 'bold', size: 12 },
-                                    textStrokeColor: 'white',
-                                    textStrokeWidth: 2
+                        });
+                        // Pie chart: Sessioni per fascia oraria
+                        new Chart(document.getElementById('timeSlotSessionsChart'), {
+                            type: 'pie',
+                            data: {
+                                labels: timeSlotLabels,
+                                datasets: [{
+                                    data: timeSlotSessionsData,
+                                    backgroundColor: timeSlotLabels.map((_, i) => barColors[i % barColors.length])
+                                }]
+                            },
+                            options: {
+                                responsive: false,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { position: 'bottom' },
+                                    datalabels: {
+                                        anchor: 'center',
+                                        align: 'center',
+                                        offset: 0,
+                                        formatter: function (value) { return value; },
+                                        color: '#1F2937',
+                                        font: { weight: 'bold', size: 12 },
+                                        textStrokeColor: 'white',
+                                        textStrokeWidth: 2
+                                    }
                                 }
                             }
-                        }
-                    });
-                }, 10);
-            }
-
-            // --- Tab 6: Diversificazione ---
-            function renderTabDiversificazione(container, analyticsData) {
-                const clientDependencyData = analyticsData.clientDependency;
-                const clientDependencyLabels = clientDependencyData.map(d => d.client);
-                const clientDependencyValues = clientDependencyData.map(d => d.revenue);
-
-                const revenuePerClient = Object.values(analyticsData.clientData).map(c => c.totalRevenue);
-                const numClients = Object.keys(analyticsData.clientData).length;
-                const avgRevenuePerClient = analyticsData.totalRevenue / numClients;
-                
-                // Calcolo dell'indice di dipendenza più accurato
-                let isDiversified = false;
-                if (numClients === 1) {
-                    // Con un solo cliente, dipendenza è sempre alta
-                    isDiversified = false;
-                } else if (numClients >= 5) {
-                    // Con 5+ clienti, verifica che nessun cliente rappresenti più del 40% del fatturato
-                    const maxClientPercentage = Math.max(...analyticsData.clientDependency.map(c => c.percentage));
-                    isDiversified = maxClientPercentage < 40;
-                } else {
-                    // Con 2-4 clienti, verifica che il cliente principale non superi il 60% del fatturato
-                    const maxClientPercentage = Math.max(...analyticsData.clientDependency.map(c => c.percentage));
-                    isDiversified = maxClientPercentage < 60;
+                        });
+                    }, 10);
                 }
 
-                container.innerHTML = `
+                // --- Tab 6: Diversificazione ---
+                function renderTabDiversificazione(container, analyticsData) {
+                    const clientDependencyData = analyticsData.clientDependency;
+                    const clientDependencyLabels = clientDependencyData.map(d => d.client);
+                    const clientDependencyValues = clientDependencyData.map(d => d.revenue);
+
+                    const revenuePerClient = Object.values(analyticsData.clientData).map(c => c.totalRevenue);
+                    const numClients = Object.keys(analyticsData.clientData).length;
+                    const avgRevenuePerClient = analyticsData.totalRevenue / numClients;
+                    
+                    // Calcolo dell'indice di dipendenza più accurato
+                    let isDiversified = false;
+                    if (numClients === 1) {
+                        // Con un solo cliente, dipendenza è sempre alta
+                        isDiversified = false;
+                    } else if (numClients >= 5) {
+                        // Con 5+ clienti, verifica che nessun cliente rappresenti più del 40% del fatturato
+                        const maxClientPercentage = Math.max(...analyticsData.clientDependency.map(c => c.percentage));
+                        isDiversified = maxClientPercentage < 40;
+                    } else {
+                        // Con 2-4 clienti, verifica che il cliente principale non superi il 60% del fatturato
+                        const maxClientPercentage = Math.max(...analyticsData.clientDependency.map(c => c.percentage));
+                        isDiversified = maxClientPercentage < 60;
+                    }
+
+                    container.innerHTML = `
         <h2 class="text-xl font-bold mb-4">6. Analisi della Diversificazione del Portafoglio Clienti</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <div class="bg-white rounded-2xl shadow-xl p-6 md:col-span-2">
@@ -1320,94 +1335,97 @@
             </div>
         </div>
     `;
-                setTimeout(() => {
-                    new Chart(document.getElementById('clientDependencyChart'), {
-                        type: 'doughnut',
-                        data: {
-                            labels: clientDependencyLabels,
-                            datasets: [{
-                                data: clientDependencyValues,
-                                backgroundColor: clientDependencyLabels.map((_, i) => barColors[i % barColors.length])
-                            }]
-                        },
-                        options: {
-                            responsive: false,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: { position: 'bottom' },
-                                datalabels: {
-                                    formatter: (value, ctx) => {
-                                        let sum = 0;
-                                        let dataArr = ctx.chart.data.datasets[0].data;
-                                        dataArr.map(data => { sum += data; });
-                                        let percentage = (value * 100 / sum).toFixed(1) + "%";
-                                        return percentage;
-                                    },
-                                    color: '#1F2937',
-                                    font: { weight: 'bold', size: 16 },
-                                    textStrokeColor: 'white',
-                                    textStrokeWidth: 2
+                    setTimeout(() => {
+                        new Chart(document.getElementById('clientDependencyChart'), {
+                            type: 'doughnut',
+                            data: {
+                                labels: clientDependencyLabels,
+                                datasets: [{
+                                    data: clientDependencyValues,
+                                    backgroundColor: clientDependencyLabels.map((_, i) => barColors[i % barColors.length])
+                                }]
+                            },
+                            options: {
+                                responsive: false,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { position: 'bottom' },
+                                    datalabels: {
+                                        formatter: (value, ctx) => {
+                                            let sum = 0;
+                                            let dataArr = ctx.chart.data.datasets[0].data;
+                                            dataArr.map(data => { sum += data; });
+                                            let percentage = (value * 100 / sum).toFixed(1) + "%";
+                                            return percentage;
+                                        },
+                                        color: '#1F2937',
+                                        font: { weight: 'bold', size: 16 },
+                                        textStrokeColor: 'white',
+                                        textStrokeWidth: 2
+                                    }
                                 }
                             }
-                        }
+                        });
+                    }, 10);
+                }
+
+                function getContrastColor(hexColor) {
+                    if (!hexColor) return '#000000';
+                    // Calcola il valore di luminosità in base al colore RGB
+                    const r = parseInt(hexColor.slice(1, 3), 16);
+                    const g = parseInt(hexColor.slice(3, 5), 16);
+                    const b = parseInt(hexColor.slice(5, 7), 16);
+                    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+                    // Se la luminosità è bassa (scuro), restituisce bianco, altrimenti nero
+                    return luminance > 0.5 ? '#000000' : '#FFFFFF';
+                }
+
+                function selectCalendarMonth(month, year) {
+                    currentDate.setMonth(month);
+                    currentDate.setFullYear(year);
+                    render();
+                }
+                function setAnalyticsTab(tabIndex) {
+                    analyticsTab = tabIndex;
+                    render();
+                }
+
+                function openSessionModal(dateKey) {
+                    // Apri direttamente la modale di inserimento attività
+                    selectedDateKey = dateKey;
+                    openAddSessionForm();
+                }
+
+                function closeModal() {
+                    const modalRoot = document.getElementById('modal-root');
+                    modalRoot.style.display = 'none';
+                    editingSessionIndex = null;
+                    selectedDateKey = null;
+                    render();
+                }
+
+                function openAddSessionForm(session = null, index = null) {
+                    const modalRoot = document.getElementById('modal-root');
+                    editingSessionIndex = index;
+                    
+                    // Ottieni tutti i clienti esistenti
+                    const existingClients = new Set();
+                    Object.values(workSessions).forEach(sessions => {
+                        sessions.forEach(s => {
+                            if (s.clientName) existingClients.add(s.clientName);
+                        });
                     });
-                }, 10);
-            }
 
-            function getContrastColor(hexColor) {
-                if (!hexColor) return '#000000';
-                // Calcola il valore di luminosità in base al colore RGB
-                const r = parseInt(hexColor.slice(1, 3), 16);
-                const g = parseInt(hexColor.slice(3, 5), 16);
-                const b = parseInt(hexColor.slice(5, 7), 16);
-                const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-                // Se la luminosità è bassa (scuro), restituisce bianco, altrimenti nero
-                return luminance > 0.5 ? '#000000' : '#FFFFFF';
-            }
-
-            function selectCalendarMonth(month, year) {
-                currentDate.setMonth(month);
-                currentDate.setFullYear(year);
-                render();
-            }
-            function setAnalyticsTab(tabIndex) {
-                analyticsTab = tabIndex;
-                render();
-            }
-
-            function openSessionModal(dateKey) {
-                // Apri direttamente la modale di inserimento attività
-                selectedDateKey = dateKey;
-                openAddSessionForm();
-            }
-
-            function closeModal() {
-                const modalRoot = document.getElementById('modal-root');
-                modalRoot.style.display = 'none';
-                editingSessionIndex = null;
-                selectedDateKey = null;
-                render();
-            }
-
-            function openAddSessionForm(session = null, index = null) {
-                const modalRoot = document.getElementById('modal-root');
-                editingSessionIndex = index;
-                
-                // Ottieni tutti i clienti esistenti
-                const existingClients = new Set();
-                Object.values(workSessions).forEach(sessions => {
-                    sessions.forEach(s => {
-                        if (s.clientName) existingClients.add(s.clientName);
-                    });
-                });
-
-                modalRoot.innerHTML = `
+                    modalRoot.innerHTML = `
         <div class="fixed inset-0 modal-bg z-50 flex items-center justify-center p-4" onclick="if(event.target === this) closeModal();">
-            <div class="bg-white rounded-2xl shadow-lg p-6 w-full max-w-md">
+            <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-lg">
             <!-- Header -->
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold text-gray-900">${session ? 'Modifica Attività' : 'Nuova Sessione di Lavoro'}</h3>
-                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-1">${session ? '✏️ Modifica Attività' : '➕ Nuova Sessione di Lavoro'}</h3>
+                    <p class="text-gray-600 text-sm">${session ? 'Modifica i dettagli dell\'attività' : 'Inserisci i dettagli della nuova sessione'}</p>
+                </div>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 transition-colors p-2 rounded-lg hover:bg-gray-100">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
@@ -1415,213 +1433,219 @@
             </div>
             
             <form id="sessionForm" onsubmit="event.preventDefault(); handleSessionSubmit(event);" class="space-y-6">
-                <!-- Sezione Cliente -->
-                <div class="space-y-2">
-                    <!-- Labels in riga -->
-                    <div class="flex items-center space-x-3 mb-0">
-                        <div class="flex-1">
-                            <label class="block text-sm font-medium text-gray-700">Nome Cliente *</label>
-                        </div>
-                        <div class="w-1/3 flex justify-center">
-                            <label class="block text-sm font-medium text-gray-700">Colore Cliente</label>
-                        </div>
+                <!-- Sezione Cliente - Migliorata -->
+                <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 border border-blue-100">
+                    <div class="flex items-center mb-3">
+                        <span class="text-2xl mr-2">👤</span>
+                        <h4 class="text-lg font-bold text-gray-800">Dettagli Cliente</h4>
                     </div>
                     
-                    <!-- Dropdown Cliente e Colore Cliente in riga -->
-                    <div class="flex items-end space-x-3">
-                        <div class="relative w-2/3">
-                            <select id="clientDropdown" class="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                <option value="new">Nuovo cliente...</option>
-                                ${Array.from(existingClients).map(client => 
-                                    `<option value="${client}" ${session && session.clientName === client ? 'selected' : ''}>${client}</option>`
-                                ).join('')}
-                            </select>
-                        </div>
-                        <div class="w-1/3 flex justify-center">
-                            <input type="color" id="clientColor" value="${session ? session.clientColor : '#3B82F6'}" 
-                                   class="w-full h-12 rounded border border-gray-300 cursor-pointer">
-                        </div>
+                    <!-- Dropdown Cliente -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Seleziona Cliente</label>
+                        <select id="clientDropdown" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg">
+                            <option value="new">➕ Nuovo cliente...</option>
+                            ${Array.from(existingClients).map(client => 
+                                `<option value="${client}" ${session && session.clientName === client ? 'selected' : ''}>${client}</option>`
+                            ).join('')}
+                        </select>
                     </div>
                     
-                    <!-- Campo Nome Cliente -->
-                    <div class="flex items-end space-x-3">
-                        <div class="w-2/3">
+                    <!-- Nome Cliente e Colore -->
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="col-span-2">
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Nome Cliente *</label>
                             <input type="text" id="clientName" value="${session ? session.clientName : ''}" 
-                                   class="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg" 
                                    placeholder="Inserisci il nome del cliente">
                         </div>
-                        <div class="w-1/3"></div>
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Colore</label>
+                            <input type="color" id="clientColor" value="${session ? session.clientColor : '#3B82F6'}" 
+                                   class="w-full h-12 rounded-lg border border-gray-300 cursor-pointer">
+                        </div>
                     </div>
                 </div>
 
-                <!-- Sezione Orari -->
-                <div class="space-y-3">
+                <!-- Sezione Orari - Migliorata -->
+                <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border border-green-100">
+                    <div class="flex items-center mb-3">
+                        <span class="text-2xl mr-2">🕐</span>
+                        <h4 class="text-lg font-bold text-gray-800">Orari Lavoro</h4>
+                    </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Ora Inizio *</label>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Ora Inizio *</label>
                             <input type="time" id="startTime" value="${session ? session.startTime : ''}" 
-                                   class="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-lg" 
                                    placeholder="--:--" required>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Ora Fine *</label>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Ora Fine *</label>
                             <input type="time" id="endTime" value="${session ? session.endTime : ''}" 
-                                   class="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-lg" 
                                    placeholder="--:--" required>
                         </div>
                     </div>
                 </div>
 
-                <!-- Sezione Finanziaria -->
-                <div class="space-y-3">
+                <!-- Sezione Finanziaria - Migliorata -->
+                <div class="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4 border border-yellow-100">
+                    <div class="flex items-center mb-3">
+                        <span class="text-2xl mr-2">💰</span>
+                        <h4 class="text-lg font-bold text-gray-800">Dettagli Finanziari</h4>
+                    </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Tariffa Oraria (€)</label>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Tariffa Oraria (€)</label>
                             <input type="number" id="hourlyRate" ${session ? `value="${(session.earnings / session.duration).toFixed(2)}"` : ''} 
-                                   class="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 text-lg" 
                                    step="0.01" min="0" placeholder="es. 50.00">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Aliquota INPS (%)</label>
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Aliquota INPS (%)</label>
                             <input type="number" id="inpsRate" ${session && session.inpsRate ? `value="${session.inpsRate.toFixed(2)}"` : ''} 
-                                   class="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 text-lg" 
                                    step="0.01" min="0" max="100" placeholder="es. 4.00">
                         </div>
                     </div>
                 </div>
 
-                <!-- Sezione Attività -->
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">Attività</label>
-                    <textarea id="notes" rows="3" 
-                              class="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                              placeholder="Descrivi l'attività svolta...">${session ? (session.attivita || '') : ''}</textarea>
+                <!-- Sezione Attività - Migliorata -->
+                <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-100">
+                    <div class="flex items-center mb-3">
+                        <span class="text-2xl mr-2">⚡</span>
+                        <h4 class="text-lg font-bold text-gray-800">Descrizione Attività</h4>
+                    </div>
+                    <textarea id="notes" rows="4" 
+                              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-lg" 
+                              placeholder="Descrivi in dettaglio l'attività svolta...">${session ? (session.attivita || '') : ''}</textarea>
                 </div>
 
                 <!-- Pulsanti -->
-                <div class="flex space-x-3 pt-4">
+                <div class="flex space-x-4 pt-6">
                     <button type="button" onclick="closeModal()" 
-                            class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors font-medium">
-                        Annulla
+                            class="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-colors font-medium text-lg">
+                        ❌ Annulla
                     </button>
                     <button type="submit" 
-                            class="flex-1 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-md hover:from-blue-600 hover:to-purple-700 transition-all duration-200 font-medium">
-                        Salva
+                            class="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-200 font-medium text-lg shadow-lg">
+                        💾 Salva
                     </button>
                 </div>
             </form>
             </div>
         </div>
     `;
-                
-                modalRoot.style.display = 'block';
-                
-                // Aggiungi event listener per il dropdown
-                const clientDropdown = document.getElementById('clientDropdown');
-                const clientNameInput = document.getElementById('clientName');
-                
-                clientDropdown.addEventListener('change', function() {
-                    if (this.value === 'new') {
-                        clientNameInput.value = '';
-                        clientNameInput.placeholder = 'Inserisci il nome del cliente';
-                        // Reset dei campi quando si sceglie "Nuovo cliente"
-                        document.getElementById('clientColor').value = '#3B82F6';
-                        document.getElementById('hourlyRate').value = '0.00';
-                        document.getElementById('inpsRate').value = '0.00';
-                    } else {
-                        clientNameInput.value = this.value;
-                        
-                        // Trova i dati del cliente selezionato
-                        const selectedClient = this.value;
-                        let clientData = null;
-                        
-                        // Cerca tra tutte le sessioni per trovare i dati più recenti del cliente
-                        Object.values(workSessions).forEach(sessions => {
-                            sessions.forEach(s => {
-                                if (s.clientName === selectedClient) {
-                                    if (!clientData || (s.hourlyRate && !clientData.hourlyRate)) {
-                                        clientData = s;
+                    
+                    modalRoot.style.display = 'block';
+                    
+                    // Aggiungi event listener per il dropdown
+                    const clientDropdown = document.getElementById('clientDropdown');
+                    const clientNameInput = document.getElementById('clientName');
+                    
+                    clientDropdown.addEventListener('change', function() {
+                        if (this.value === 'new') {
+                            clientNameInput.value = '';
+                            clientNameInput.placeholder = 'Inserisci il nome del cliente';
+                            // Reset dei campi quando si sceglie "Nuovo cliente"
+                            document.getElementById('clientColor').value = '#3B82F6';
+                            document.getElementById('hourlyRate').value = '0.00';
+                            document.getElementById('inpsRate').value = '0.00';
+                        } else {
+                            clientNameInput.value = this.value;
+                            
+                            // Trova i dati del cliente selezionato
+                            const selectedClient = this.value;
+                            let clientData = null;
+                            
+                            // Cerca tra tutte le sessioni per trovare i dati più recenti del cliente
+                            Object.values(workSessions).forEach(sessions => {
+                                sessions.forEach(s => {
+                                    if (s.clientName === selectedClient) {
+                                        if (!clientData || (s.hourlyRate && !clientData.hourlyRate)) {
+                                            clientData = s;
+                                        }
                                     }
-                                }
+                                });
                             });
-                        });
-                        
-                        // Compila i campi con i dati del cliente
-                        if (clientData) {
-                            document.getElementById('clientColor').value = clientData.clientColor || '#3B82F6';
-                            document.getElementById('hourlyRate').value = clientData.hourlyRate ? clientData.hourlyRate.toFixed(2) : '0.00';
-                            document.getElementById('inpsRate').value = clientData.inpsRate ? clientData.inpsRate.toFixed(2) : '0.00';
+                            
+                            // Compila i campi con i dati del cliente
+                            if (clientData) {
+                                document.getElementById('clientColor').value = clientData.clientColor || '#3B82F6';
+                                document.getElementById('hourlyRate').value = clientData.hourlyRate ? clientData.hourlyRate.toFixed(2) : '0.00';
+                                document.getElementById('inpsRate').value = clientData.inpsRate ? clientData.inpsRate.toFixed(2) : '0.00';
+                            }
                         }
+                    });
+                }
+
+                function handleSessionSubmit(event) {
+                    const form = event.target;
+                    const clientName = form.clientName.value.trim();
+                    const startTime = form.startTime.value;
+                    const endTime = form.endTime.value;
+                    const hourlyRate = parseFloat(form.hourlyRate.value) || 0;
+                    const inpsRate = parseFloat(form.inpsRate.value) || 0;
+                    const attivita = form.notes.value.trim();
+                    const clientColor = form.clientColor.value;
+
+                    if (!clientName || !startTime || !endTime) {
+                        alert('Compila tutti i campi obbligatori.');
+                        return;
                     }
-                });
-            }
 
-            function handleSessionSubmit(event) {
-                const form = event.target;
-                const clientName = form.clientName.value.trim();
-                const startTime = form.startTime.value;
-                const endTime = form.endTime.value;
-                const hourlyRate = parseFloat(form.hourlyRate.value) || 0;
-                const inpsRate = parseFloat(form.inpsRate.value) || 0;
-                const attivita = form.notes.value.trim();
-                const clientColor = form.clientColor.value;
+                    const start = new Date(`${selectedDateKey}T${startTime}`);
+                    const end = new Date(`${selectedDateKey}T${endTime}`);
+                    const duration = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+                    
+                    // Calcola il ricavo totale basato sulla tariffa oraria
+                    const earnings = hourlyRate * duration;
 
-                if (!clientName || !startTime || !endTime) {
-                    alert('Compila tutti i campi obbligatori.');
-                    return;
-                }
+                    const newSession = {
+                        clientName,
+                        startTime,
+                        endTime,
+                        duration,
+                        earnings,
+                        clientColor,
+                        hourlyRate,
+                        inpsRate,
+                        attivita
+                    };
 
-                const start = new Date(`${selectedDateKey}T${startTime}`);
-                const end = new Date(`${selectedDateKey}T${endTime}`);
-                const duration = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-                
-                // Calcola il ricavo totale basato sulla tariffa oraria
-                const earnings = hourlyRate * duration;
-
-                const newSession = {
-                    clientName,
-                    startTime,
-                    endTime,
-                    duration,
-                    earnings,
-                    clientColor,
-                    hourlyRate,
-                    inpsRate,
-                    attivita
-                };
-
-                if (!workSessions[selectedDateKey]) {
-                    workSessions[selectedDateKey] = [];
-                }
-
-                if (editingSessionIndex !== null) {
-                    // Modifica sessione esistente
-                    workSessions[selectedDateKey][editingSessionIndex] = newSession;
-                } else {
-                    // Aggiungi nuova sessione
-                    workSessions[selectedDateKey].push(newSession);
-                }
-
-                saveToStorage();
-                closeModal();
-                render();
-            }
-
-            function deleteSession(index) {
-                if (confirm('Sei sicuro di voler eliminare questa sessione?')) {
-                    workSessions[selectedDateKey].splice(index, 1);
-                    if (workSessions[selectedDateKey].length === 0) {
-                        delete workSessions[selectedDateKey];
+                    if (!workSessions[selectedDateKey]) {
+                        workSessions[selectedDateKey] = [];
                     }
+
+                    if (editingSessionIndex !== null) {
+                        // Modifica sessione esistente
+                        workSessions[selectedDateKey][editingSessionIndex] = newSession;
+                    } else {
+                        // Aggiungi nuova sessione
+                        workSessions[selectedDateKey].push(newSession);
+                    }
+
                     saveToStorage();
-                    openSessionModal(selectedDateKey);
+                    closeModal();
+                    render();
                 }
-            }
 
-            function renderSessionCard(session, index) {
-                const bgColor = session.clientColor || '#3B82F6';
-                const textColor = getContrastColor(bgColor);
-                return `
+                function deleteSession(index) {
+                    if (confirm('Sei sicuro di voler eliminare questa sessione?')) {
+                        workSessions[selectedDateKey].splice(index, 1);
+                        if (workSessions[selectedDateKey].length === 0) {
+                            delete workSessions[selectedDateKey];
+                        }
+                        saveToStorage();
+                        openSessionModal(selectedDateKey);
+                    }
+                }
+
+                function renderSessionCard(session, index) {
+                    const bgColor = session.clientColor || '#3B82F6';
+                    const textColor = getContrastColor(bgColor);
+                    return `
         <div class="flex items-center justify-between p-4 rounded-lg shadow-sm" style="background-color: ${bgColor}; color: ${textColor};">
             <div>
                 <div class="font-bold text-lg">${session.clientName}</div>
@@ -1638,81 +1662,81 @@
             </div>
         </div>
     `;
-            }
-            // --- Drag & Drop ---
-            let draggedSession = null;
-            let draggedSessionDateKey = null;
+                }
+                // --- Drag & Drop ---
+                let draggedSession = null;
+                let draggedSessionDateKey = null;
 
-            function handleDragStart(event, sessionIndex, dateKey) {
-                draggedSession = workSessions[dateKey][sessionIndex];
-                draggedSessionDateKey = dateKey;
-                event.dataTransfer.effectAllowed = 'move';
-            }
+                function handleDragStart(event, sessionIndex, dateKey) {
+                    draggedSession = workSessions[dateKey][sessionIndex];
+                    draggedSessionDateKey = dateKey;
+                    event.dataTransfer.effectAllowed = 'move';
+                }
 
-            function handleDragOver(event) {
-                event.preventDefault();
-                event.target.closest('div[data-datekey]').classList.add('bg-blue-200');
-            }
+                function handleDragOver(event) {
+                    event.preventDefault();
+                    event.target.closest('div[data-datekey]').classList.add('bg-blue-200');
+                }
 
-            function handleDragLeave(event) {
-                event.preventDefault();
-                event.target.closest('div[data-datekey]').classList.remove('bg-blue-200');
-            }
+                function handleDragLeave(event) {
+                    event.preventDefault();
+                    event.target.closest('div[data-datekey]').classList.remove('bg-blue-200');
+                }
 
-            function handleDrop(event, newDateKey) {
-                event.preventDefault();
-                event.target.closest('div[data-datekey]').classList.remove('bg-blue-200');
+                function handleDrop(event, newDateKey) {
+                    event.preventDefault();
+                    event.target.closest('div[data-datekey]').classList.remove('bg-blue-200');
 
-                if (draggedSession && draggedSessionDateKey && draggedSessionDateKey !== newDateKey) {
-                    // Rimuovi la sessione dalla data originale
-                    const oldSessions = workSessions[draggedSessionDateKey];
-                    const oldSessionIndex = oldSessions.findIndex(s => s === draggedSession);
-                    if (oldSessionIndex > -1) {
-                        oldSessions.splice(oldSessionIndex, 1);
-                        if (oldSessions.length === 0) {
-                            delete workSessions[draggedSessionDateKey];
+                    if (draggedSession && draggedSessionDateKey && draggedSessionDateKey !== newDateKey) {
+                        // Rimuovi la sessione dalla data originale
+                        const oldSessions = workSessions[draggedSessionDateKey];
+                        const oldSessionIndex = oldSessions.findIndex(s => s === draggedSession);
+                        if (oldSessionIndex > -1) {
+                            oldSessions.splice(oldSessionIndex, 1);
+                            if (oldSessions.length === 0) {
+                                delete workSessions[draggedSessionDateKey];
+                            }
                         }
+
+                        // Aggiungi la sessione alla nuova data
+                        if (!workSessions[newDateKey]) {
+                            workSessions[newDateKey] = [];
+                        }
+                        workSessions[newDateKey].push(draggedSession);
+
+                        draggedSession.date = newDateKey;
+
+                        saveToStorage();
+                        render();
                     }
-
-                    // Aggiungi la sessione alla nuova data
-                    if (!workSessions[newDateKey]) {
-                        workSessions[newDateKey] = [];
-                    }
-                    workSessions[newDateKey].push(draggedSession);
-
-                    draggedSession.date = newDateKey;
-
-                    saveToStorage();
-                    render();
                 }
-            }
 
-            function handleDragEnd(event) {
-                draggedSession = null;
-                draggedSessionDateKey = null;
-                document.querySelectorAll('[data-datekey]').forEach(cell => cell.classList.remove('bg-blue-200'));
-            }
-
-            function editSession(dateKey, sessionIndex) {
-                event.stopPropagation();
-                selectedDateKey = dateKey;
-                const session = workSessions[dateKey][sessionIndex];
-                openAddSessionForm(session, sessionIndex);
-            }
-
-            function deleteSessionFromCalendar(dateKey, sessionIndex) {
-                event.stopPropagation();
-                if (confirm('Sei sicuro di voler eliminare questa sessione?')) {
-                    workSessions[dateKey].splice(sessionIndex, 1);
-                    if (workSessions[dateKey].length === 0) {
-                        delete workSessions[dateKey];
-                    }
-                    saveToStorage();
-                    render();
+                function handleDragEnd(event) {
+                    draggedSession = null;
+                    draggedSessionDateKey = null;
+                    document.querySelectorAll('[data-datekey]').forEach(cell => cell.classList.remove('bg-blue-200'));
                 }
-            }
 
-        </script>
-    </body>
+                function editSession(dateKey, sessionIndex) {
+                    event.stopPropagation();
+                    selectedDateKey = dateKey;
+                    const session = workSessions[dateKey][sessionIndex];
+                    openAddSessionForm(session, sessionIndex);
+                }
 
-</html>
+                function deleteSessionFromCalendar(dateKey, sessionIndex) {
+                    event.stopPropagation();
+                    if (confirm('Sei sicuro di voler eliminare questa sessione?')) {
+                        workSessions[dateKey].splice(sessionIndex, 1);
+                        if (workSessions[dateKey].length === 0) {
+                            delete workSessions[dateKey];
+                        }
+                        saveToStorage();
+                        render();
+                    }
+                }
+
+            </script>
+        </body>
+
+        </html>
