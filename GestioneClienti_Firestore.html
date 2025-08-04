@@ -13,108 +13,703 @@
         <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
         <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-analytics-compat.js"></script>
         <style>
+            /* === MODERN DESIGN SYSTEM === */
+            :root {
+                --primary-50: #eff6ff;
+                --primary-100: #dbeafe;
+                --primary-200: #bfdbfe;
+                --primary-300: #93c5fd;
+                --primary-400: #60a5fa;
+                --primary-500: #3b82f6;
+                --primary-600: #2563eb;
+                --primary-700: #1d4ed8;
+                --primary-800: #1e40af;
+                --primary-900: #1e3a8a;
+                
+                --success-50: #f0fdf4;
+                --success-100: #dcfce7;
+                --success-200: #bbf7d0;
+                --success-300: #86efac;
+                --success-400: #4ade80;
+                --success-500: #22c55e;
+                --success-600: #16a34a;
+                --success-700: #15803d;
+                --success-800: #166534;
+                --success-900: #14532d;
+                
+                --warning-50: #fffbeb;
+                --warning-100: #fef3c7;
+                --warning-200: #fde68a;
+                --warning-300: #fcd34d;
+                --warning-400: #fbbf24;
+                --warning-500: #f59e0b;
+                --warning-600: #d97706;
+                --warning-700: #b45309;
+                --warning-800: #92400e;
+                --warning-900: #78350f;
+                
+                --danger-50: #fef2f2;
+                --danger-100: #fee2e2;
+                --danger-200: #fecaca;
+                --danger-300: #fca5a5;
+                --danger-400: #f87171;
+                --danger-500: #ef4444;
+                --danger-600: #dc2626;
+                --danger-700: #b91c1c;
+                --danger-800: #991b1b;
+                --danger-900: #7f1d1d;
+                
+                --gray-50: #f9fafb;
+                --gray-100: #f3f4f6;
+                --gray-200: #e5e7eb;
+                --gray-300: #d1d5db;
+                --gray-400: #9ca3af;
+                --gray-500: #6b7280;
+                --gray-600: #4b5563;
+                --gray-700: #374151;
+                --gray-800: #1f2937;
+                --gray-900: #111827;
+                
+                --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+                --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+                --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+                --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+                --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+                --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+                
+                --radius-sm: 0.25rem;
+                --radius: 0.375rem;
+                --radius-md: 0.5rem;
+                --radius-lg: 0.75rem;
+                --radius-xl: 1rem;
+                --radius-2xl: 1.5rem;
+                --radius-3xl: 2rem;
+                
+                --transition-fast: 150ms ease-in-out;
+                --transition-normal: 250ms ease-in-out;
+                --transition-slow: 350ms ease-in-out;
+            }
+
+            /* === DARK MODE SUPPORT === */
+            @media (prefers-color-scheme: dark) {
+                :root {
+                    --gray-50: #111827;
+                    --gray-100: #1f2937;
+                    --gray-200: #374151;
+                    --gray-300: #4b5563;
+                    --gray-400: #6b7280;
+                    --gray-500: #9ca3af;
+                    --gray-600: #d1d5db;
+                    --gray-700: #e5e7eb;
+                    --gray-800: #f3f4f6;
+                    --gray-900: #f9fafb;
+                }
+            }
+
+            /* === ENHANCED TYPOGRAPHY === */
             body {
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                line-height: 1.6;
+                color: var(--gray-900);
+                background-color: var(--gray-50);
             }
 
+            /* === IMPROVED ACCESSIBILITY === */
+            .sr-only {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                padding: 0;
+                margin: -1px;
+                overflow: hidden;
+                clip: rect(0, 0, 0, 0);
+                white-space: nowrap;
+                border: 0;
+            }
+
+            /* === FOCUS STATES === */
+            button:focus-visible,
+            input:focus-visible,
+            textarea:focus-visible,
+            select:focus-visible {
+                outline: 2px solid var(--primary-500);
+                outline-offset: 2px;
+            }
+
+            /* === ENHANCED MODAL === */
             .modal-bg {
-                background: rgba(0, 0, 0, 0.5);
+                background: rgba(0, 0, 0, 0.6);
+                backdrop-filter: blur(4px);
             }
 
-            /* Centra perfettamente la modale su mobile quando è visibile */
+            .modal-content {
+                animation: modalSlideIn 0.3s ease-out;
+            }
+
+            @keyframes modalSlideIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(-20px) scale(0.95);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }
+            }
+
+            /* === IMPROVED MOBILE EXPERIENCE === */
             @media (max-width: 768px) {
                 #modal-root:not([style*="display: none"]) {
                     display: flex !important;
                     align-items: center !important;
                     justify-content: center !important;
+                    padding: 1rem;
                 }
 
-                #modal-root:not([style*="display: none"])>div {
+                #modal-root:not([style*="display: none"]) > div {
                     margin: auto !important;
                     transform: none !important;
+                    max-width: calc(100vw - 2rem);
+                    max-height: calc(100vh - 2rem);
                 }
             }
 
+            /* === ENHANCED TAB SYSTEM === */
             .tab-active {
-                border-bottom: 2px solid #3B82F6;
-                color: #3B82F6;
-                background: #F1F5F9;
+                border-bottom: 3px solid var(--primary-500);
+                color: var(--primary-600);
+                background: var(--primary-50);
+                font-weight: 600;
             }
 
-            /* --- MIGLIORAMENTI GRAFICI UI/UX --- */
+            .tab-inactive {
+                color: var(--gray-500);
+                transition: all var(--transition-normal);
+            }
 
-            /* Giorni del calendario */
+            .tab-inactive:hover {
+                color: var(--primary-600);
+                background: var(--primary-50);
+            }
+
+            /* === ENHANCED CALENDAR DAYS === */
             [data-datekey] {
-                border-radius: 0.5rem;
-                transition: background-color 0.3s, transform 0.2s;
+                border-radius: var(--radius-lg);
+                transition: all var(--transition-normal);
+                position: relative;
+                overflow: hidden;
             }
 
             [data-datekey]:hover {
-                background-color: #e0f2fe !important;
+                background-color: var(--primary-50) !important;
+                transform: translateY(-2px);
+                box-shadow: var(--shadow-lg);
+            }
+
+            [data-datekey]:active {
+                transform: translateY(0);
+            }
+
+            [data-datekey]::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 3px;
+                background: linear-gradient(90deg, var(--primary-400), var(--primary-600));
+                opacity: 0;
+                transition: opacity var(--transition-normal);
+            }
+
+            [data-datekey]:hover::before {
+                opacity: 1;
+            }
+
+            [data-datekey] > div:first-child > span {
+                font-size: 1rem;
+                font-weight: 700;
+                color: var(--gray-700);
+            }
+
+            /* === ENHANCED SESSION CARDS === */
+            .session-card {
+                box-shadow: var(--shadow-sm);
+                border-radius: var(--radius-md);
+                font-size: 0.75rem;
+                font-weight: 500;
+                transition: all var(--transition-normal);
+                position: relative;
+                overflow: hidden;
+                min-height: 60px;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+            }
+
+            .session-card:hover {
+                transform: translateY(-1px);
+                box-shadow: var(--shadow-md);
+                z-index: 10;
+            }
+
+            .session-card .session-actions {
+                opacity: 0;
+                transition: opacity var(--transition-normal);
+            }
+
+            .session-card:hover .session-actions {
+                opacity: 1;
+            }
+
+            /* === IMPROVED CALENDAR SESSION VISIBILITY === */
+            .calendar-day .session-card {
+                margin-bottom: 4px;
+                padding: 6px 8px;
+                font-size: 10px;
+                line-height: 1.2;
+            }
+
+            .calendar-day .session-card .client-name {
+                font-weight: 700;
+                font-size: 11px;
+                margin-bottom: 2px;
+                text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            }
+
+            .calendar-day .session-card .activity {
+                background: rgba(255,255,255,0.25);
+                padding: 2px 4px;
+                border-radius: 3px;
+                margin-bottom: 2px;
+                font-size: 9px;
+                font-weight: 600;
+                text-align: center;
+                backdrop-filter: blur(2px);
+            }
+
+            .calendar-day .session-card .time {
+                font-weight: 600;
+                font-size: 9px;
+                opacity: 0.95;
+                display: flex;
+                align-items: center;
+                gap: 2px;
+            }
+
+            .calendar-day .session-card .earnings {
+                background: rgba(255,255,255,0.3);
+                padding: 2px 4px;
+                border-radius: 3px;
+                font-size: 9px;
+                font-weight: 700;
+                text-align: center;
+                margin-top: 2px;
+                backdrop-filter: blur(2px);
+            }
+
+            /* === ENHANCED CALENDAR DAY VISIBILITY === */
+            .calendar-day {
+                background: white;
+                min-height: 120px;
+                padding: 0.75rem;
+                transition: all var(--transition-normal);
+                position: relative;
+            }
+
+            .calendar-day:hover {
+                background: var(--primary-50);
+                transform: translateY(-1px);
+                box-shadow: var(--shadow-md);
+            }
+
+            .calendar-day.today {
+                background: var(--primary-100);
+                border: 2px solid var(--primary-300);
+                box-shadow: var(--shadow-lg);
+            }
+
+            .calendar-day.other-month {
+                background: var(--gray-50);
+                color: var(--gray-400);
+            }
+
+            .calendar-day .day-number {
+                font-size: 1rem;
+                font-weight: 700;
+                color: var(--gray-700);
+                margin-bottom: 4px;
+            }
+
+            .calendar-day .session-count {
+                position: absolute;
+                top: 4px;
+                right: 4px;
+                background: var(--primary-500);
+                color: white;
+                border-radius: 50%;
+                width: 18px;
+                height: 18px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 10px;
+                font-weight: 700;
+                box-shadow: var(--shadow-sm);
+            }
+
+            /* === IMPROVED SESSION OVERFLOW === */
+            .calendar-day .sessions-container {
+                max-height: 80px;
+                overflow-y: auto;
+                scrollbar-width: thin;
+                scrollbar-color: var(--gray-300) transparent;
+            }
+
+            .calendar-day .sessions-container::-webkit-scrollbar {
+                width: 4px;
+            }
+
+            .calendar-day .sessions-container::-webkit-scrollbar-track {
+                background: transparent;
+            }
+
+            .calendar-day .sessions-container::-webkit-scrollbar-thumb {
+                background: var(--gray-300);
+                border-radius: 2px;
+            }
+
+            .calendar-day .sessions-container::-webkit-scrollbar-thumb:hover {
+                background: var(--gray-400);
+            }
+
+            /* === ENHANCED SESSION VISIBILITY === */
+            .calendar-day .session-card {
+                position: relative;
+                z-index: 1;
+            }
+
+            .calendar-day .session-card:hover {
+                z-index: 10;
                 transform: scale(1.02);
             }
 
-            [data-datekey]>div:first-child>span {
-                font-size: 1rem;
-                font-weight: bold;
+            /* === IMPROVED TEXT CONTRAST === */
+            .calendar-day .session-card .client-name {
+                text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+                font-weight: 800;
             }
 
-            [data-datekey] .text-xs.p-2 {
-                box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.3);
-                font-size: 0.75rem;
-                font-weight: 500;
+            .calendar-day .session-card .activity {
+                text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+                font-weight: 700;
             }
 
-            /* Attività e orari */
-            [data-datekey] .text-[10px].font-medium {
-                background-color: rgba(255, 255, 255, 0.3);
-                padding: 0 4px;
-                border-radius: 0.25rem;
-                display: inline-block;
-                margin-top: 2px;
+            .calendar-day .session-card .time {
+                text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+                font-weight: 600;
             }
 
-            [data-datekey] .text-[10px].opacity-90 {
-                opacity: 0.6;
-                font-size: 10px;
+            .calendar-day .session-card .earnings {
+                text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+                font-weight: 800;
             }
 
-            /* Input modale */
-            input[type="text"],
-            input[type="time"],
-            input[type="number"],
-            textarea,
-            select {
-                border-radius: 0.75rem;
-                padding: 0.75rem 1rem;
+            /* === ENHANCED FORM ELEMENTS === */
+            .form-input {
+                border-radius: var(--radius-lg);
+                padding: 0.875rem 1rem;
                 font-size: 0.875rem;
-                transition: box-shadow 0.2s;
+                transition: all var(--transition-normal);
+                border: 2px solid var(--gray-200);
+                background: white;
             }
 
-            input:focus,
-            textarea:focus,
-            select:focus {
-                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+            .form-input:focus {
+                border-color: var(--primary-500);
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+                outline: none;
             }
 
-            /* Pulsanti */
-            button {
-                transition: background-color 0.2s, transform 0.1s;
+            .form-input:invalid {
+                border-color: var(--danger-400);
             }
 
-            button:hover {
+            /* === ENHANCED BUTTONS === */
+            .btn {
+                transition: all var(--transition-normal);
+                font-weight: 600;
+                border-radius: var(--radius-lg);
+                position: relative;
+                overflow: hidden;
+            }
+
+            .btn:hover {
                 transform: translateY(-1px);
+                box-shadow: var(--shadow-md);
+            }
+
+            .btn:active {
+                transform: translateY(0);
+            }
+
+            .btn-primary {
+                background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+                color: white;
+                border: none;
+            }
+
+            .btn-primary:hover {
+                background: linear-gradient(135deg, var(--primary-600), var(--primary-700));
+            }
+
+            .btn-secondary {
+                background: white;
+                color: var(--gray-700);
+                border: 2px solid var(--gray-200);
+            }
+
+            .btn-secondary:hover {
+                border-color: var(--primary-400);
+                color: var(--primary-600);
+            }
+
+            .btn-danger {
+                background: linear-gradient(135deg, var(--danger-500), var(--danger-600));
+                color: white;
+                border: none;
+            }
+
+            .btn-danger:hover {
+                background: linear-gradient(135deg, var(--danger-600), var(--danger-700));
+            }
+
+            /* === LOADING STATES === */
+            .loading {
+                position: relative;
+                overflow: hidden;
+            }
+
+            .loading::after {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: -100%;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+                animation: loading 1.5s infinite;
+            }
+
+            @keyframes loading {
+                0% { left: -100%; }
+                100% { left: 100%; }
+            }
+
+            /* === ENHANCED CARDS === */
+            .card {
+                background: white;
+                border-radius: var(--radius-xl);
+                box-shadow: var(--shadow-lg);
+                transition: all var(--transition-normal);
+                border: 1px solid var(--gray-100);
+            }
+
+            .card:hover {
+                box-shadow: var(--shadow-xl);
+                transform: translateY(-2px);
+            }
+
+            /* === ENHANCED STATS CARDS === */
+            .stats-card {
+                background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+                color: white;
+                border-radius: var(--radius-xl);
+                padding: 1.5rem;
+                box-shadow: var(--shadow-xl);
+                transition: all var(--transition-normal);
+            }
+
+            .stats-card:hover {
+                transform: translateY(-4px);
+                box-shadow: var(--shadow-2xl);
+            }
+
+            .stats-card.success {
+                background: linear-gradient(135deg, var(--success-500), var(--success-600));
+            }
+
+            .stats-card.warning {
+                background: linear-gradient(135deg, var(--warning-500), var(--warning-600));
+            }
+
+            /* === ENHANCED ANIMATIONS === */
+            .fade-in {
+                animation: fadeIn 0.5s ease-out;
+            }
+
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+
+            .slide-in {
+                animation: slideIn 0.3s ease-out;
+            }
+
+            @keyframes slideIn {
+                from { transform: translateX(-20px); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+
+            /* === ENHANCED TOOLTIPS === */
+            .tooltip {
+                position: relative;
+            }
+
+            .tooltip::after {
+                content: attr(data-tooltip);
+                position: absolute;
+                bottom: 100%;
+                left: 50%;
+                transform: translateX(-50%);
+                background: var(--gray-800);
+                color: white;
+                padding: 0.5rem 0.75rem;
+                border-radius: var(--radius);
+                font-size: 0.75rem;
+                white-space: nowrap;
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity var(--transition-normal);
+                z-index: 1000;
+            }
+
+            .tooltip:hover::after {
+                opacity: 1;
+            }
+
+            /* === ENHANCED SCROLLBARS === */
+            ::-webkit-scrollbar {
+                width: 8px;
+                height: 8px;
+            }
+
+            ::-webkit-scrollbar-track {
+                background: var(--gray-100);
+                border-radius: var(--radius);
+            }
+
+            ::-webkit-scrollbar-thumb {
+                background: var(--gray-300);
+                border-radius: var(--radius);
+            }
+
+            ::-webkit-scrollbar-thumb:hover {
+                background: var(--gray-400);
+            }
+
+            /* === RESPONSIVE IMPROVEMENTS === */
+            @media (max-width: 640px) {
+                .mobile-stack {
+                    flex-direction: column;
+                }
+                
+                .mobile-full {
+                    width: 100%;
+                }
+                
+                .mobile-text-center {
+                    text-align: center;
+                }
+            }
+
+            /* === ENHANCED NOTIFICATIONS === */
+            .notification {
+                position: fixed;
+                top: 1rem;
+                right: 1rem;
+                padding: 1rem 1.5rem;
+                border-radius: var(--radius-lg);
+                box-shadow: var(--shadow-xl);
+                z-index: 1000;
+                animation: slideInRight 0.3s ease-out;
+            }
+
+            .notification.success {
+                background: var(--success-500);
+                color: white;
+            }
+
+            .notification.error {
+                background: var(--danger-500);
+                color: white;
+            }
+
+            .notification.warning {
+                background: var(--warning-500);
+                color: white;
+            }
+
+            @keyframes slideInRight {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+
+            /* === ENHANCED CALENDAR GRID === */
+            .calendar-grid {
+                display: grid;
+                grid-template-columns: repeat(7, 1fr);
+                gap: 1px;
+                background: var(--gray-200);
+                border-radius: var(--radius-xl);
+                overflow: hidden;
+            }
+
+            .calendar-day {
+                background: white;
+                min-height: 120px;
+                padding: 0.75rem;
+                transition: all var(--transition-normal);
+            }
+
+            .calendar-day:hover {
+                background: var(--primary-50);
+            }
+
+            .calendar-day.today {
+                background: var(--primary-100);
+                border: 2px solid var(--primary-300);
+            }
+
+            .calendar-day.other-month {
+                background: var(--gray-50);
+                color: var(--gray-400);
+            }
+
+            /* === ENHANCED CHART CONTAINERS === */
+            .chart-container {
+                background: white;
+                border-radius: var(--radius-xl);
+                padding: 1.5rem;
+                box-shadow: var(--shadow-lg);
+                transition: all var(--transition-normal);
+            }
+
+            .chart-container:hover {
+                box-shadow: var(--shadow-xl);
             }
         </style>
     </head>
 
-    <body class="bg-gray-50">
+    <body class="bg-gray-50 min-h-screen">
         <div id="root" class="max-w-7xl mx-auto p-2 md:p-4"></div>
         <div id="modal-root" style="display:none;"></div>
+        <div id="notifications-container"></div>
         <script>
 
 
-            // --- Variabili globali ---
+            // === ENHANCED GLOBAL VARIABLES ===
             const months = [
                 'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
                 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'
@@ -133,6 +728,93 @@
             let editingSessionIndex = null;
             let currentView = 'calendar'; // 'calendar' o 'analytics'
             let analyticsTab = 0; // 0: Allocazione Tempo, 1: Frequenza, 2: Carico, 3: Redditività, 4: Produttività, 5: Diversificazione
+            let isLoading = false;
+            let notifications = [];
+
+            // === ENHANCED UTILITY FUNCTIONS ===
+            function showNotification(message, type = 'success', duration = 3000) {
+                const notification = {
+                    id: Date.now(),
+                    message,
+                    type,
+                    duration
+                };
+                
+                notifications.push(notification);
+                renderNotifications();
+                
+                setTimeout(() => {
+                    removeNotification(notification.id);
+                }, duration);
+            }
+
+            function removeNotification(id) {
+                notifications = notifications.filter(n => n.id !== id);
+                renderNotifications();
+            }
+
+            function renderNotifications() {
+                const container = document.getElementById('notifications-container');
+                if (!container) return;
+                
+                container.innerHTML = notifications.map(notification => `
+                    <div class="notification ${notification.type} fade-in" data-id="${notification.id}">
+                        <div class="flex items-center space-x-2">
+                            <span>${getNotificationIcon(notification.type)}</span>
+                            <span>${notification.message}</span>
+                            <button onclick="removeNotification(${notification.id})" class="ml-2 hover:opacity-75">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            function getNotificationIcon(type) {
+                switch (type) {
+                    case 'success': return '✅';
+                    case 'error': return '❌';
+                    case 'warning': return '⚠️';
+                    default: return 'ℹ️';
+                }
+            }
+
+            function setLoading(loading) {
+                isLoading = loading;
+                const root = document.getElementById('root');
+                if (loading) {
+                    root.classList.add('loading');
+                } else {
+                    root.classList.remove('loading');
+                }
+            }
+
+            function debounce(func, wait) {
+                let timeout;
+                return function executedFunction(...args) {
+                    const later = () => {
+                        clearTimeout(timeout);
+                        func(...args);
+                    };
+                    clearTimeout(timeout);
+                    timeout = setTimeout(later, wait);
+                };
+            }
+
+            function throttle(func, limit) {
+                let inThrottle;
+                return function() {
+                    const args = arguments;
+                    const context = this;
+                    if (!inThrottle) {
+                        func.apply(context, args);
+                        inThrottle = true;
+                        setTimeout(() => inThrottle = false, limit);
+                    }
+                }
+            }
 
             // Registra il plugin per i datalabels
             Chart.register(ChartDataLabels);
@@ -153,85 +835,172 @@
             let userId = "cqX7v7RtgeZfvYDHe0QsGh496x52";
 
 
-            // --- Persistenza Ibrida (Firestore + localStorage) ---
+            // === ENHANCED HYBRID STORAGE (Firestore + localStorage) ===
             async function saveToStorage() {
-                console.log('Salvataggio dati...', Object.keys(workSessions).length, 'giorni');
-                // Salva sempre in localStorage come cache
-                localStorage.setItem('workSessions', JSON.stringify(workSessions));
-                console.log('Dati salvati in localStorage');
+                setLoading(true);
+                try {
+                    console.log('Salvataggio dati...', Object.keys(workSessions).length, 'giorni');
+                    
+                    // Salva sempre in localStorage come cache
+                    localStorage.setItem('workSessions', JSON.stringify(workSessions));
+                    console.log('Dati salvati in localStorage');
+                    showNotification('Dati salvati localmente', 'success', 2000);
 
-                // Se online, sincronizza con Firestore
-                if (isOnline && userId) {
-                    try {
-                        await db.collection("work_sessions").doc(userId).set({
-                            sessions: workSessions,
-                            last_updated: new Date()
-                        });
-                        console.log('Dati sincronizzati con successo su Firestore');
-                    } catch (error) {
-                        console.error('Errore nel salvataggio su Firestore:', error);
-                        isOnline = false;
-                        updateSyncStatus();
+                    // Se online, sincronizza con Firestore
+                    if (isOnline && userId) {
+                        try {
+                            await db.collection("work_sessions").doc(userId).set({
+                                sessions: workSessions,
+                                last_updated: new Date()
+                            });
+                            console.log('Dati sincronizzati con successo su Firestore');
+                            showNotification('Dati sincronizzati con il cloud', 'success', 3000);
+                        } catch (error) {
+                            console.error('Errore nel salvataggio su Firestore:', error);
+                            isOnline = false;
+                            updateSyncStatus();
+                            showNotification('Errore di sincronizzazione. I dati sono salvati localmente.', 'warning', 5000);
+                        }
                     }
+                    updateSyncStatus();
+                } catch (error) {
+                    console.error('Errore generale nel salvataggio:', error);
+                    showNotification('Errore nel salvataggio dei dati', 'error', 5000);
+                } finally {
+                    setLoading(false);
                 }
-                updateSyncStatus();
             }
 
             async function loadFromStorage() {
-                console.log('Caricamento dati...');
-                // Prima carica da localStorage (cache locale)
-                const localData = localStorage.getItem('workSessions');
-                if (localData) {
-                    workSessions = JSON.parse(localData);
-                    console.log('Dati caricati da localStorage:', Object.keys(workSessions).length, 'giorni');
-                } else {
-                    console.log('Nessun dato in localStorage');
-                }
-
-                // Se online, prova a sincronizzare da Firestore
-                if (isOnline && userId) {
-                    console.log('Tentativo di caricamento da Firestore per utente:', userId);
-                    try {
-                        const doc = await db.collection("work_sessions").doc(userId).get();
-                        if (doc.exists) {
-                            const cloudData = doc.data().sessions;
-                            if (!localData || Object.keys(cloudData).length > Object.keys(workSessions).length) {
-                                console.log('Aggiornamento da cloud: dati più recenti disponibili');
-                                workSessions = cloudData;
-                                localStorage.setItem('workSessions', JSON.stringify(workSessions));
-                            }
-                        } else {
-                            console.log('Nessun dato trovato su Firestore');
-                        }
-                    } catch (error) {
-                        console.error('Errore nel caricamento da Firestore:', error);
-                        isOnline = false;
-                        updateSyncStatus();
+                setLoading(true);
+                try {
+                    console.log('Caricamento dati...');
+                    
+                    // Prima carica da localStorage (cache locale)
+                    const localData = localStorage.getItem('workSessions');
+                    if (localData) {
+                        workSessions = JSON.parse(localData);
+                        console.log('Dati caricati da localStorage:', Object.keys(workSessions).length, 'giorni');
+                        showNotification(`Caricati ${Object.keys(workSessions).length} giorni da cache locale`, 'success', 2000);
+                    } else {
+                        console.log('Nessun dato in localStorage');
+                        showNotification('Nessun dato locale trovato', 'warning', 3000);
                     }
-                } else {
-                    console.log('Non posso caricare da Firestore - offline o utente non valido');
-                }
 
-                console.log('Caricamento completato. Dati disponibili:', Object.keys(workSessions).length, 'giorni');
+                    // Se online, prova a sincronizzare da Firestore
+                    if (isOnline && userId) {
+                        console.log('Tentativo di caricamento da Firestore per utente:', userId);
+                        try {
+                            const doc = await db.collection("work_sessions").doc(userId).get();
+                            if (doc.exists) {
+                                const cloudData = doc.data().sessions;
+                                if (!localData || Object.keys(cloudData).length > Object.keys(workSessions).length) {
+                                    console.log('Aggiornamento da cloud: dati più recenti disponibili');
+                                    workSessions = cloudData;
+                                    localStorage.setItem('workSessions', JSON.stringify(workSessions));
+                                    showNotification('Dati aggiornati dal cloud', 'success', 3000);
+                                } else {
+                                    showNotification('Dati locali sono aggiornati', 'success', 2000);
+                                }
+                            } else {
+                                console.log('Nessun dato trovato su Firestore');
+                                showNotification('Nessun dato trovato nel cloud', 'warning', 3000);
+                            }
+                        } catch (error) {
+                            console.error('Errore nel caricamento da Firestore:', error);
+                            isOnline = false;
+                            updateSyncStatus();
+                            showNotification('Errore di connessione al cloud. Usando dati locali.', 'warning', 5000);
+                        }
+                    } else {
+                        console.log('Non posso caricare da Firestore - offline o utente non valido');
+                        showNotification('Modalità offline attiva', 'warning', 3000);
+                    }
+
+                    console.log('Caricamento completato. Dati disponibili:', Object.keys(workSessions).length, 'giorni');
+                } catch (error) {
+                    console.error('Errore generale nel caricamento:', error);
+                    showNotification('Errore nel caricamento dei dati', 'error', 5000);
+                } finally {
+                    setLoading(false);
+                }
             }
 
-            // --- Funzione per aggiornare l'indicatore di stato ---
+            // === ENHANCED SYNC STATUS ===
             function updateSyncStatus() {
                 const syncStatusElement = document.getElementById('syncStatus');
                 if (syncStatusElement) {
                     const statusDot = syncStatusElement.querySelector('div');
                     const statusText = syncStatusElement.querySelector('span');
+                    const statusIcon = syncStatusElement.querySelector('.status-icon');
 
                     if (isOnline) {
-                        statusDot.className = 'w-2 h-2 rounded-full bg-green-500';
-                        statusText.className = 'text-green-600';
+                        statusDot.className = 'w-3 h-3 rounded-full bg-green-400 animate-pulse';
+                        statusText.className = 'text-green-600 font-medium';
                         statusText.textContent = 'Sincronizzato';
+                        if (statusIcon) statusIcon.textContent = '🟢';
                     } else {
-                        statusDot.className = 'w-2 h-2 rounded-full bg-gray-400';
-                        statusText.className = 'text-gray-500';
+                        statusDot.className = 'w-3 h-3 rounded-full bg-gray-400';
+                        statusText.className = 'text-gray-500 font-medium';
                         statusText.textContent = 'Solo locale';
+                        if (statusIcon) statusIcon.textContent = '🔴';
                     }
                 }
+            }
+
+            // === ENHANCED ERROR HANDLING ===
+            function handleError(error, context = 'Operazione') {
+                console.error(`Errore in ${context}:`, error);
+                
+                let userMessage = 'Si è verificato un errore imprevisto';
+                
+                if (error.code === 'permission-denied') {
+                    userMessage = 'Accesso negato. Verifica le autorizzazioni.';
+                } else if (error.code === 'unavailable') {
+                    userMessage = 'Servizio temporaneamente non disponibile.';
+                } else if (error.code === 'network-error') {
+                    userMessage = 'Errore di connessione. Verifica la tua connessione internet.';
+                } else if (error.message) {
+                    userMessage = error.message;
+                }
+                
+                showNotification(userMessage, 'error', 5000);
+            }
+
+            // === ENHANCED VALIDATION ===
+            function validateSession(session) {
+                const errors = [];
+                
+                if (!session.clientName || session.clientName.trim() === '') {
+                    errors.push('Nome cliente è obbligatorio');
+                }
+                
+                if (!session.startTime) {
+                    errors.push('Orario di inizio è obbligatorio');
+                }
+                
+                if (!session.endTime) {
+                    errors.push('Orario di fine è obbligatorio');
+                }
+                
+                if (session.startTime && session.endTime) {
+                    const start = new Date(`2000-01-01 ${session.startTime}`);
+                    const end = new Date(`2000-01-01 ${session.endTime}`);
+                    
+                    if (start >= end) {
+                        errors.push('L\'orario di fine deve essere successivo all\'orario di inizio');
+                    }
+                }
+                
+                if (session.duration && session.duration <= 0) {
+                    errors.push('La durata deve essere maggiore di zero');
+                }
+                
+                if (session.earnings && session.earnings < 0) {
+                    errors.push('Il guadagno non può essere negativo');
+                }
+                
+                return errors;
             }
 
             // Inizializza l'applicazione con Firestore
@@ -450,22 +1219,53 @@
             function renderCalendar() {
                 const root = document.getElementById('root');
                 root.innerHTML = '';
-                // Header
+                
+                // Enhanced Header with better UX
                 const header = document.createElement('div');
-                header.className = 'bg-gradient-to-r from-blue-600 to-purple-700 rounded-2xl shadow-xl p-6 mb-6 text-center';
+                header.className = 'card p-6 mb-6 text-center bg-gradient-to-r from-blue-600 to-purple-700 text-white';
                 header.innerHTML = `
-    <h1 class="text-4xl font-bold text-white mb-3">📅 Dashboard Gestione Clienti</h1>
-    <div class="flex items-center justify-center space-x-6">
-        <p class="text-blue-100 text-lg">Gestisci i tuoi clienti e il carico di lavoro</p>
-        <button id="analyticsBtn" class="px-6 py-3 bg-white bg-opacity-20 text-white rounded-xl hover:bg-opacity-30 transition-all font-medium shadow-lg backdrop-blur-sm border border-white border-opacity-30 hover:scale-105">📊 Analisi</button>
-        <div id="syncStatus" class="flex items-center space-x-2 text-sm">
-            <div class="w-3 h-3 rounded-full ${isOnline ? 'bg-green-400' : 'bg-gray-400'} animate-pulse"></div>
-            <span class="${isOnline ? 'text-green-200' : 'text-gray-300'}">${isOnline ? '🟢 Sincronizzato' : '🔴 Solo locale'}</span>
-            </div>
-        </div>
-    `;
+                    <div class="fade-in">
+                        <h1 class="text-4xl md:text-5xl font-bold mb-4 flex items-center justify-center space-x-3">
+                            <span>📅</span>
+                            <span>Dashboard Gestione Clienti</span>
+                        </h1>
+                        <p class="text-blue-100 text-lg mb-6">Gestisci i tuoi clienti e il carico di lavoro in modo efficiente</p>
+                        
+                        <div class="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-6">
+                            <div class="flex items-center space-x-2 bg-white bg-opacity-10 rounded-lg px-4 py-2 backdrop-blur-sm">
+                                <span class="status-icon">${isOnline ? '🟢' : '🔴'}</span>
+                                <div id="syncStatus" class="flex items-center space-x-2 text-sm">
+                                    <div class="w-3 h-3 rounded-full ${isOnline ? 'bg-green-400' : 'bg-gray-400'} animate-pulse"></div>
+                                    <span class="${isOnline ? 'text-green-200' : 'text-gray-300'} font-medium">
+                                        ${isOnline ? 'Sincronizzato' : 'Solo locale'}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <button id="analyticsBtn" class="btn btn-primary px-6 py-3 bg-white bg-opacity-20 text-white rounded-xl hover:bg-opacity-30 transition-all font-medium shadow-lg backdrop-blur-sm border border-white border-opacity-30 hover:scale-105 flex items-center space-x-2">
+                                <span>📊</span>
+                                <span>Analisi Dettagliate</span>
+                            </button>
+                            
+                            <button id="todayBtn" class="btn btn-secondary px-4 py-2 bg-white bg-opacity-10 text-white rounded-lg hover:bg-opacity-20 transition-all font-medium">
+                                Oggi
+                            </button>
+                        </div>
+                    </div>
+                `;
                 root.appendChild(header);
-                header.querySelector('#analyticsBtn').onclick = () => { currentView = 'analytics'; render(); };
+                
+                // Enhanced event handlers
+                header.querySelector('#analyticsBtn').onclick = () => { 
+                    currentView = 'analytics'; 
+                    render(); 
+                };
+                
+                header.querySelector('#todayBtn').onclick = () => {
+                    currentDate = new Date();
+                    render();
+                    showNotification('Tornato a oggi', 'success', 2000);
+                };
 
                 // Tab mesi anno corrente con navigazione anni
                 const monthsTabBar = document.createElement('div');
@@ -502,68 +1302,111 @@
                     render();
                 };
 
-                // Calendario
+                // Enhanced Calendar Grid
                 const calendar = document.createElement('div');
-                calendar.className = 'bg-white rounded-2xl shadow-xl overflow-hidden';
-                // Week days
+                calendar.className = 'card overflow-hidden';
+                
+                // Enhanced Week Header
                 let weekHeader = '<div class="grid grid-cols-7 bg-gray-50 border-b">';
                 weekDays.forEach(day => {
-                    weekHeader += `<div class="p-4 text-center font-semibold text-gray-700 border-r last:border-r-0">${day}</div>`;
+                    weekHeader += `<div class="p-4 text-center font-semibold text-gray-700 border-r last:border-r-0 bg-gradient-to-b from-gray-50 to-gray-100">${day}</div>`;
                 });
                 weekHeader += '</div>';
                 calendar.innerHTML = weekHeader;
-                // Days grid
+                
+                // Enhanced Days Grid
                 const days = getDaysInMonth(currentDate);
-                let daysGrid = '<div class="grid grid-cols-7">';
+                let daysGrid = '<div class="calendar-grid">';
                 days.forEach((day, idx) => {
                     const dateKey = formatDateKey(day.date);
                     const sessions = workSessions[dateKey] || [];
+                    const isTodayClass = isToday(day.date) ? 'today' : '';
+                    const otherMonthClass = !day.isCurrentMonth ? 'other-month' : '';
+                    
                     daysGrid += `
-        <div class="min-h-[100px] border-r border-b last:border-r-0 p-2 cursor-pointer transition-all hover:bg-blue-50 ${!day.isCurrentMonth ? 'bg-gray-50 text-gray-400' : 'bg-white'} ${isToday(day.date) ? 'bg-blue-100 ring-2 ring-blue-300' : ''}"
-            data-datekey="${dateKey}"
-            ${day.isCurrentMonth ? `ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, '${dateKey}')"` : 'style="pointer-events:none;opacity:0.5;"'}>
-            <div class="flex justify-between items-start mb-2">
-                <span class="text-sm font-medium ${isToday(day.date) ? 'text-blue-700' : ''}">${day.date.getDate()}</span>
-            </div>
-            ${sessions.length > 0 ? sessions.slice(0, 2).map((s, idx) => {
-                        const bgColor = s.clientColor || '#3B82F6';
-                        const textColor = getContrastColor(bgColor);
-                        return `<div class="text-xs p-2 rounded-lg shadow-sm mb-1 cursor-move relative group"
-                    draggable="true"
-                    ondragstart="handleDragStart(event, ${idx}, '${dateKey}')"
-                    ondragend="handleDragEnd(event)"
-                    style="background-color: ${bgColor}; color: ${textColor}">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <div class="font-medium">${s.clientName}</div>
-                                ${s.attivita ? `<div class="text-[10px] font-medium">${s.attivita}</div>` : ''}
-                                <div class="text-[10px] opacity-90">${s.startTime}-${s.endTime}</div>
+                        <div class="calendar-day ${isTodayClass} ${otherMonthClass}" 
+                             data-datekey="${dateKey}"
+                             ${day.isCurrentMonth ? `ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, '${dateKey}')"` : 'style="pointer-events:none;opacity:0.5;"'}>
+                            
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="day-number ${isToday(day.date) ? 'text-blue-700' : ''}">${day.date.getDate()}</span>
+                                ${sessions.length > 0 ? `<span class="session-count">${sessions.length}</span>` : ''}
                             </div>
-                            <div class="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onclick="editSession('${dateKey}', ${idx})" class="p-1 rounded hover:bg-white hover:bg-opacity-20 transition-colors" title="Modifica">
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                    </svg>
-                                </button>
-                                <button onclick="deleteSessionFromCalendar('${dateKey}', ${idx})" class="p-1 rounded hover:bg-white hover:bg-opacity-20 transition-colors" title="Elimina">
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.035 21H7.965a2 2 0 01-1.997-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                    </svg>
-                                </button>
+                            
+                            <div class="sessions-container space-y-1">
+                                ${sessions.length > 0 ? sessions.slice(0, 3).map((s, idx) => {
+                                    const bgColor = s.clientColor || '#3B82F6';
+                                    const textColor = getContrastColor(bgColor);
+                                    return `<div class="session-card text-xs p-2 rounded-lg shadow-sm cursor-move relative group mb-1"
+                                        draggable="true"
+                                        ondragstart="handleDragStart(event, ${idx}, '${dateKey}')"
+                                        ondragend="handleDragEnd(event)"
+                                        style="background-color: ${bgColor}; color: ${textColor}; border-left: 3px solid ${textColor}">
+                                        
+                                        <div class="flex justify-between items-start">
+                                            <div class="flex-1 min-w-0">
+                                                <!-- Nome Cliente - Più grande e in evidenza -->
+                                                <div class="client-name truncate" title="${s.clientName}">
+                                                    👤 ${s.clientName}
+                                                </div>
+                                                
+                                                <!-- Attività - Stile diverso e più visibile -->
+                                                ${s.attivita ? `<div class="activity" title="${s.attivita}">
+                                                    📝 ${s.attivita}
+                                                </div>` : ''}
+                                                
+                                                <!-- Orario - Con icona e stile distintivo -->
+                                                <div class="time">
+                                                    🕐 ${s.startTime} - ${s.endTime}
+                                                    ${s.duration ? `<span class="opacity-75">(${s.duration.toFixed(1)}h)</span>` : ''}
+                                                </div>
+                                                
+                                                <!-- Guadagno - Se presente -->
+                                                ${s.earnings ? `<div class="earnings">
+                                                    💰 €${s.earnings}
+                                                </div>` : ''}
+                                            </div>
+                                            
+                                            <div class="session-actions flex space-x-1 ml-2">
+                                                <button onclick="editSession('${dateKey}', ${idx})" 
+                                                        class="p-1 rounded hover:bg-white hover:bg-opacity-20 transition-colors tooltip" 
+                                                        data-tooltip="Modifica sessione">
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                    </svg>
+                                                </button>
+                                                <button onclick="deleteSessionFromCalendar('${dateKey}', ${idx})" 
+                                                        class="p-1 rounded hover:bg-white hover:bg-opacity-20 transition-colors tooltip" 
+                                                        data-tooltip="Elimina sessione">
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.035 21H7.965a2 2 0 01-1.997-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>`;
+                                }).join('') : ''}
+                                
+                                ${sessions.length > 3 ? `<div class="text-xs text-gray-600 text-center bg-gray-200 rounded px-2 py-1 font-medium">
+                                    +${sessions.length - 3} altre sessioni
+                                </div>` : ''}
                             </div>
                         </div>
-                    </div>`;
-                    }).join('') : ''}
-            ${sessions.length > 2 ? `<div class="text-xs text-gray-500 text-center">+${sessions.length - 2} altri</div>` : ''}
-        </div>
-        `;
+                    `;
                 });
                 daysGrid += '</div>';
                 calendar.innerHTML += daysGrid;
                 root.appendChild(calendar);
-                // Eventi click giorno
+                
+                // Enhanced click events with better feedback
                 calendar.querySelectorAll('[data-datekey]').forEach(cell => {
-                    cell.onclick = () => openSessionModal(cell.getAttribute('data-datekey'));
+                    cell.onclick = (e) => {
+                        // Don't trigger if clicking on session actions
+                        if (e.target.closest('.session-actions')) return;
+                        
+                        const dateKey = cell.getAttribute('data-datekey');
+                        openSessionModal(dateKey);
+                    };
                 });
             }
 
@@ -1470,9 +2313,16 @@
         <div class="fixed inset-0 modal-bg z-50 flex items-center justify-center p-4" onclick="if(event.target === this) closeModal();">
             <div class="bg-white rounded-2xl shadow-lg p-6 w-full max-w-md">
             <!-- Header -->
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold text-gray-900">${session ? 'Modifica Attività' : 'Nuova Sessione di Lavoro'}</h3>
-                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+            <!-- Enhanced Header -->
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h3 class="text-2xl font-bold text-gray-900 flex items-center">
+                        <span class="mr-2">${session ? '✏️' : '➕'}</span>
+                        ${session ? 'Modifica Attività' : 'Nuova Sessione di Lavoro'}
+                    </h3>
+                    <p class="text-gray-600 mt-1">${selectedDateKey ? new Date(selectedDateKey).toLocaleDateString('it-IT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : ''}</p>
+                </div>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 transition-colors p-2 rounded-lg hover:bg-gray-100">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
@@ -1495,11 +2345,11 @@
                     <!-- Dropdown Cliente e Colore Cliente in riga -->
                     <div class="flex items-end space-x-3">
                         <div class="relative w-2/3">
-                            <select id="clientDropdown" class="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                <option value="new">Nuovo cliente...</option>
+                            <select id="clientDropdown" class="form-input w-full">
+                                <option value="new">➕ Nuovo cliente...</option>
                                 ${Array.from(existingClients).map(client =>
-                    `<option value="${client}" ${session && session.clientName === client ? 'selected' : ''}>${client}</option>`
-                ).join('')}
+                                    `<option value="${client}" ${session && session.clientName === client ? 'selected' : ''}>👤 ${client}</option>`
+                                ).join('')}
                             </select>
                         </div>
                         <div class="w-1/3 flex justify-center">
@@ -1512,7 +2362,7 @@
                     <div class="flex items-end space-x-3">
                         <div class="w-2/3">
                             <input type="text" id="clientName" value="${session ? session.clientName : ''}" 
-                                   class="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                   class="form-input w-full" 
                                    placeholder="Inserisci il nome del cliente">
                         </div>
                         <div class="w-1/3"></div>
@@ -1525,13 +2375,13 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Ora Inizio *</label>
                             <input type="time" id="startTime" value="${session ? session.startTime : ''}" 
-                                   class="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                   class="form-input w-full" 
                                    placeholder="--:--" required>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Ora Fine *</label>
                             <input type="time" id="endTime" value="${session ? session.endTime : ''}" 
-                                   class="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                   class="form-input w-full" 
                                    placeholder="--:--" required>
                         </div>
                     </div>
@@ -1543,13 +2393,13 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Tariffa Oraria (€)</label>
                             <input type="number" id="hourlyRate" ${session ? `value="${(session.earnings / session.duration).toFixed(2)}"` : ''} 
-                                   class="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                   class="form-input w-full" 
                                    step="0.01" min="0" placeholder="es. 50.00">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Aliquota INPS (%)</label>
                             <input type="number" id="inpsRate" ${session && session.inpsRate ? `value="${session.inpsRate.toFixed(2)}"` : ''} 
-                                   class="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                   class="form-input w-full" 
                                    step="0.01" min="0" max="100" placeholder="es. 4.00">
                         </div>
                     </div>
@@ -1558,20 +2408,20 @@
                 <!-- Sezione Attività -->
                 <div class="space-y-2">
                     <label class="block text-sm font-medium text-gray-700">Attività</label>
-                    <textarea id="notes" rows="3" 
-                              class="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                              placeholder="Descrivi l'attività svolta...">${session ? (session.attivita || '') : ''}</textarea>
+                    <textarea id="notes" rows="4" 
+                              class="form-input w-full" 
+                              placeholder="Descrivi l'attività svolta, note importanti, obiettivi raggiunti...">${session ? (session.attivita || '') : ''}</textarea>
                 </div>
 
                 <!-- Pulsanti -->
-                <div class="flex space-x-3 pt-4">
+                <div class="flex space-x-4 pt-6">
                     <button type="button" onclick="closeModal()" 
-                            class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors font-medium">
-                        Annulla
+                            class="btn btn-secondary flex-1 px-6 py-3">
+                        ❌ Annulla
                     </button>
                     <button type="submit" 
-                            class="flex-1 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-md hover:from-blue-600 hover:to-purple-700 transition-all duration-200 font-medium">
-                        Salva
+                            class="btn btn-primary flex-1 px-6 py-3">
+                        💾 Salva Sessione
                     </button>
                 </div>
             </form>
@@ -1622,76 +2472,128 @@
             }
 
             async function handleSessionSubmit(event) {
-                const clientName = document.getElementById('clientName').value.trim();
-                const clientColor = document.getElementById('clientColor').value;
-                const startTime = document.getElementById('startTime').value;
-                const endTime = document.getElementById('endTime').value;
-                const hourlyRate = parseFloat(document.getElementById('hourlyRate').value || 0);
-                const inpsRate = parseFloat(document.getElementById('inpsRate').value || 0);
-                const notes = document.getElementById('notes').value.trim();
+                try {
+                    setLoading(true);
+                    
+                    const clientName = document.getElementById('clientName').value.trim();
+                    const clientColor = document.getElementById('clientColor').value;
+                    const startTime = document.getElementById('startTime').value;
+                    const endTime = document.getElementById('endTime').value;
+                    const hourlyRate = parseFloat(document.getElementById('hourlyRate').value || 0);
+                    const inpsRate = parseFloat(document.getElementById('inpsRate').value || 0);
+                    const notes = document.getElementById('notes').value.trim();
 
-                if (!clientName || !startTime || !endTime) {
-                    alert("Compila tutti i campi obbligatori.");
-                    return;
-                }
-
-                const start = new Date(`1970-01-01T${startTime}:00`);
-                const end = new Date(`1970-01-01T${endTime}:00`);
-                if (end <= start) {
-                    alert("L'orario di fine deve essere successivo a quello di inizio.");
-                    return;
-                }
-
-                const duration = (end - start) / (1000 * 60 * 60);
-                const earnings = hourlyRate * duration;
-
-                const sessionData = {
-                    clientName,
-                    clientColor,
-                    startTime,
-                    endTime,
-                    duration,
-                    earnings,
-                    hourlyRate,
-                    inpsRate,
-                    attivita: notes
-                };
-
-                if (!workSessions[selectedDateKey]) {
-                    workSessions[selectedDateKey] = [];
-                }
-
-                if (editingSessionIndex !== null) {
-                    workSessions[selectedDateKey][editingSessionIndex] = sessionData;
-                } else {
-                    workSessions[selectedDateKey].push(sessionData);
-                }
-
-                // 🔄 AGGIORNA TUTTE LE SESSIONI DELLO STESSO CLIENTE
-                Object.entries(workSessions).forEach(([dateKey, sessions]) => {
-                    sessions.forEach(session => {
-                        if (session.clientName === clientName) {
-                            session.clientColor = clientColor;
-                            if (session.duration) {
-                                session.earnings = hourlyRate * session.duration;
-                            }
-                            session.inpsRate = inpsRate;
+                    // Enhanced validation with better user feedback
+                    const errors = [];
+                    
+                    if (!clientName) {
+                        errors.push('Nome cliente è obbligatorio');
+                    }
+                    
+                    if (!startTime) {
+                        errors.push('Orario di inizio è obbligatorio');
+                    }
+                    
+                    if (!endTime) {
+                        errors.push('Orario di fine è obbligatorio');
+                    }
+                    
+                    if (startTime && endTime) {
+                        const start = new Date(`1970-01-01T${startTime}:00`);
+                        const end = new Date(`1970-01-01T${endTime}:00`);
+                        if (end <= start) {
+                            errors.push('L\'orario di fine deve essere successivo a quello di inizio');
                         }
-                    });
-                });
+                    }
+                    
+                    if (hourlyRate < 0) {
+                        errors.push('La tariffa oraria non può essere negativa');
+                    }
+                    
+                    if (inpsRate < 0 || inpsRate > 100) {
+                        errors.push('L\'aliquota INPS deve essere tra 0 e 100%');
+                    }
 
-                await saveToStorage();
-                closeModal();
+                    if (errors.length > 0) {
+                        showNotification(errors.join('\n'), 'error', 5000);
+                        return;
+                    }
+
+                    const start = new Date(`1970-01-01T${startTime}:00`);
+                    const end = new Date(`1970-01-01T${endTime}:00`);
+                    const duration = (end - start) / (1000 * 60 * 60);
+                    const earnings = hourlyRate * duration;
+
+                    const sessionData = {
+                        clientName,
+                        clientColor,
+                        startTime,
+                        endTime,
+                        duration,
+                        earnings,
+                        hourlyRate,
+                        inpsRate,
+                        attivita: notes
+                    };
+
+                    if (!workSessions[selectedDateKey]) {
+                        workSessions[selectedDateKey] = [];
+                    }
+
+                    if (editingSessionIndex !== null) {
+                        workSessions[selectedDateKey][editingSessionIndex] = sessionData;
+                        showNotification('Sessione modificata con successo', 'success', 3000);
+                    } else {
+                        workSessions[selectedDateKey].push(sessionData);
+                        showNotification('Sessione aggiunta con successo', 'success', 3000);
+                    }
+
+                    // 🔄 AGGIORNA TUTTE LE SESSIONI DELLO STESSO CLIENTE
+                    Object.entries(workSessions).forEach(([dateKey, sessions]) => {
+                        sessions.forEach(session => {
+                            if (session.clientName === clientName) {
+                                session.clientColor = clientColor;
+                                if (session.duration) {
+                                    session.earnings = hourlyRate * session.duration;
+                                }
+                                session.inpsRate = inpsRate;
+                            }
+                        });
+                    });
+
+                    await saveToStorage();
+                    closeModal();
+                    
+                } catch (error) {
+                    console.error('Errore nel salvataggio della sessione:', error);
+                    showNotification('Errore nel salvataggio della sessione', 'error', 5000);
+                } finally {
+                    setLoading(false);
+                }
             }
 
-            function deleteSession(index) {
-                if (confirm('Sei sicuro di voler eliminare questa sessione?')) {
-                    workSessions[selectedDateKey].splice(index, 1);
-                    if (workSessions[selectedDateKey].length === 0) {
-                        delete workSessions[selectedDateKey];
+            async function deleteSession(index) {
+                try {
+                    const session = workSessions[selectedDateKey][index];
+                    const clientName = session.clientName;
+                    
+                    if (confirm(`Sei sicuro di voler eliminare la sessione per "${clientName}"?`)) {
+                        setLoading(true);
+                        
+                        workSessions[selectedDateKey].splice(index, 1);
+                        if (workSessions[selectedDateKey].length === 0) {
+                            delete workSessions[selectedDateKey];
+                        }
+                        
+                        await saveToStorage();
+                        showNotification('Sessione eliminata con successo', 'success', 3000);
+                        openSessionModal(selectedDateKey);
                     }
-                    saveToStorage();
-                    openSessionModal(selectedDateKey);
+                } catch (error) {
+                    console.error('Errore nell\'eliminazione della sessione:', error);
+                    showNotification('Errore nell\'eliminazione della sessione', 'error', 5000);
+                } finally {
+                    setLoading(false);
                 }
             }
 
