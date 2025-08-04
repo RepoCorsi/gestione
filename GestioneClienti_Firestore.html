@@ -241,11 +241,16 @@
                 transition: all var(--transition-normal);
                 position: relative;
                 overflow: hidden;
+                min-height: 60px;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
             }
 
             .session-card:hover {
                 transform: translateY(-1px);
                 box-shadow: var(--shadow-md);
+                z-index: 10;
             }
 
             .session-card .session-actions {
@@ -255,6 +260,159 @@
 
             .session-card:hover .session-actions {
                 opacity: 1;
+            }
+
+            /* === IMPROVED CALENDAR SESSION VISIBILITY === */
+            .calendar-day .session-card {
+                margin-bottom: 4px;
+                padding: 6px 8px;
+                font-size: 10px;
+                line-height: 1.2;
+            }
+
+            .calendar-day .session-card .client-name {
+                font-weight: 700;
+                font-size: 11px;
+                margin-bottom: 2px;
+                text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            }
+
+            .calendar-day .session-card .activity {
+                background: rgba(255,255,255,0.25);
+                padding: 2px 4px;
+                border-radius: 3px;
+                margin-bottom: 2px;
+                font-size: 9px;
+                font-weight: 600;
+                text-align: center;
+                backdrop-filter: blur(2px);
+            }
+
+            .calendar-day .session-card .time {
+                font-weight: 600;
+                font-size: 9px;
+                opacity: 0.95;
+                display: flex;
+                align-items: center;
+                gap: 2px;
+            }
+
+            .calendar-day .session-card .earnings {
+                background: rgba(255,255,255,0.3);
+                padding: 2px 4px;
+                border-radius: 3px;
+                font-size: 9px;
+                font-weight: 700;
+                text-align: center;
+                margin-top: 2px;
+                backdrop-filter: blur(2px);
+            }
+
+            /* === ENHANCED CALENDAR DAY VISIBILITY === */
+            .calendar-day {
+                background: white;
+                min-height: 120px;
+                padding: 0.75rem;
+                transition: all var(--transition-normal);
+                position: relative;
+            }
+
+            .calendar-day:hover {
+                background: var(--primary-50);
+                transform: translateY(-1px);
+                box-shadow: var(--shadow-md);
+            }
+
+            .calendar-day.today {
+                background: var(--primary-100);
+                border: 2px solid var(--primary-300);
+                box-shadow: var(--shadow-lg);
+            }
+
+            .calendar-day.other-month {
+                background: var(--gray-50);
+                color: var(--gray-400);
+            }
+
+            .calendar-day .day-number {
+                font-size: 1rem;
+                font-weight: 700;
+                color: var(--gray-700);
+                margin-bottom: 4px;
+            }
+
+            .calendar-day .session-count {
+                position: absolute;
+                top: 4px;
+                right: 4px;
+                background: var(--primary-500);
+                color: white;
+                border-radius: 50%;
+                width: 18px;
+                height: 18px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 10px;
+                font-weight: 700;
+                box-shadow: var(--shadow-sm);
+            }
+
+            /* === IMPROVED SESSION OVERFLOW === */
+            .calendar-day .sessions-container {
+                max-height: 80px;
+                overflow-y: auto;
+                scrollbar-width: thin;
+                scrollbar-color: var(--gray-300) transparent;
+            }
+
+            .calendar-day .sessions-container::-webkit-scrollbar {
+                width: 4px;
+            }
+
+            .calendar-day .sessions-container::-webkit-scrollbar-track {
+                background: transparent;
+            }
+
+            .calendar-day .sessions-container::-webkit-scrollbar-thumb {
+                background: var(--gray-300);
+                border-radius: 2px;
+            }
+
+            .calendar-day .sessions-container::-webkit-scrollbar-thumb:hover {
+                background: var(--gray-400);
+            }
+
+            /* === ENHANCED SESSION VISIBILITY === */
+            .calendar-day .session-card {
+                position: relative;
+                z-index: 1;
+            }
+
+            .calendar-day .session-card:hover {
+                z-index: 10;
+                transform: scale(1.02);
+            }
+
+            /* === IMPROVED TEXT CONTRAST === */
+            .calendar-day .session-card .client-name {
+                text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+                font-weight: 800;
+            }
+
+            .calendar-day .session-card .activity {
+                text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+                font-weight: 700;
+            }
+
+            .calendar-day .session-card .time {
+                text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+                font-weight: 600;
+            }
+
+            .calendar-day .session-card .earnings {
+                text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+                font-weight: 800;
             }
 
             /* === ENHANCED FORM ELEMENTS === */
@@ -1171,26 +1329,42 @@
                              ${day.isCurrentMonth ? `ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, '${dateKey}')"` : 'style="pointer-events:none;opacity:0.5;"'}>
                             
                             <div class="flex justify-between items-start mb-2">
-                                <span class="text-sm font-medium ${isToday(day.date) ? 'text-blue-700 font-bold' : ''}">${day.date.getDate()}</span>
-                                ${sessions.length > 0 ? `<span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">${sessions.length}</span>` : ''}
+                                <span class="day-number ${isToday(day.date) ? 'text-blue-700' : ''}">${day.date.getDate()}</span>
+                                ${sessions.length > 0 ? `<span class="session-count">${sessions.length}</span>` : ''}
                             </div>
                             
-                            <div class="space-y-1">
+                            <div class="sessions-container space-y-1">
                                 ${sessions.length > 0 ? sessions.slice(0, 3).map((s, idx) => {
                                     const bgColor = s.clientColor || '#3B82F6';
                                     const textColor = getContrastColor(bgColor);
-                                    return `<div class="session-card text-xs p-2 rounded-lg shadow-sm cursor-move relative group"
+                                    return `<div class="session-card text-xs p-2 rounded-lg shadow-sm cursor-move relative group mb-1"
                                         draggable="true"
                                         ondragstart="handleDragStart(event, ${idx}, '${dateKey}')"
                                         ondragend="handleDragEnd(event)"
-                                        style="background-color: ${bgColor}; color: ${textColor}">
+                                        style="background-color: ${bgColor}; color: ${textColor}; border-left: 3px solid ${textColor}">
                                         
                                         <div class="flex justify-between items-start">
                                             <div class="flex-1 min-w-0">
-                                                <div class="font-medium truncate" title="${s.clientName}">${s.clientName}</div>
-                                                ${s.attivita ? `<div class="text-[10px] font-medium opacity-90 truncate" title="${s.attivita}">${s.attivita}</div>` : ''}
-                                                <div class="text-[10px] opacity-90">${s.startTime}-${s.endTime}</div>
-                                                ${s.earnings ? `<div class="text-[10px] font-bold">€${s.earnings}</div>` : ''}
+                                                <!-- Nome Cliente - Più grande e in evidenza -->
+                                                <div class="client-name truncate" title="${s.clientName}">
+                                                    👤 ${s.clientName}
+                                                </div>
+                                                
+                                                <!-- Attività - Stile diverso e più visibile -->
+                                                ${s.attivita ? `<div class="activity" title="${s.attivita}">
+                                                    📝 ${s.attivita}
+                                                </div>` : ''}
+                                                
+                                                <!-- Orario - Con icona e stile distintivo -->
+                                                <div class="time">
+                                                    🕐 ${s.startTime} - ${s.endTime}
+                                                    ${s.duration ? `<span class="opacity-75">(${s.duration.toFixed(1)}h)</span>` : ''}
+                                                </div>
+                                                
+                                                <!-- Guadagno - Se presente -->
+                                                ${s.earnings ? `<div class="earnings">
+                                                    💰 €${s.earnings}
+                                                </div>` : ''}
                                             </div>
                                             
                                             <div class="session-actions flex space-x-1 ml-2">
@@ -1213,7 +1387,9 @@
                                     </div>`;
                                 }).join('') : ''}
                                 
-                                ${sessions.length > 3 ? `<div class="text-xs text-gray-500 text-center bg-gray-100 rounded px-2 py-1">+${sessions.length - 3} altri</div>` : ''}
+                                ${sessions.length > 3 ? `<div class="text-xs text-gray-600 text-center bg-gray-200 rounded px-2 py-1 font-medium">
+                                    +${sessions.length - 3} altre sessioni
+                                </div>` : ''}
                             </div>
                         </div>
                     `;
