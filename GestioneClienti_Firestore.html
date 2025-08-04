@@ -687,13 +687,17 @@
     `;
                 // Bar chart
                 setTimeout(() => {
-                    const clientNames = Object.keys(analyticsData.clientData);
+                    // Ordina i clienti per numero di interventi (dal più grande al più piccolo)
+                    const sortedClients = Object.entries(analyticsData.clientData)
+                        .sort(([, a], [, b]) => b.interventions - a.interventions);
+                    
+                    const clientNames = sortedClients.map(([name]) => name);
                     const barData = {
                         labels: clientNames,
                         datasets: [{
                             label: 'Numero Interventi',
-                            data: clientNames.map(name => analyticsData.clientData[name].interventions),
-                            backgroundColor: clientNames.map(name => analyticsData.clientData[name].color)
+                            data: sortedClients.map(([, data]) => data.interventions),
+                            backgroundColor: sortedClients.map(([, data]) => data.color)
                         }]
                     };
                     new Chart(document.getElementById('barChart'), {
@@ -751,18 +755,22 @@
                 const topClients = Object.entries(analyticsData.clientData)
                     .sort(([, a], [, b]) => b.totalRevenue - a.totalRevenue)
                     .slice(0, 10);
-                // Ordina i mesi in modo cronologico (YYYY-MM)
-                const monthsKeys = Object.keys(analyticsData.monthlyData).sort((a, b) => {
-                    const [ay, am] = a.split('-').map(Number);
-                    const [by, bm] = b.split('-').map(Number);
-                    if (ay !== by) return ay - by;
-                    return am - bm;
-                });
-                // Crea etichette solo con i nomi dei mesi
-                const monthLabels = monthsKeys.map(key => {
+                // Genera tutti i mesi dell'anno corrente (anche quelli con 0 attività)
+                const currentYear = new Date().getFullYear();
+                const allMonthsKeys = [];
+                for (let i = 1; i <= 12; i++) {
+                    const monthKey = `${currentYear}-${i.toString().padStart(2, '0')}`;
+                    allMonthsKeys.push(monthKey);
+                }
+                
+                // Crea etichette per tutti i mesi
+                const monthLabels = allMonthsKeys.map(key => {
                     const [, month] = key.split('-').map(Number);
                     return months[month - 1]; // months array è 0-based, quindi month-1
                 });
+                
+                // Usa allMonthsKeys invece di monthsKeys per includere tutti i mesi
+                const monthsKeys = allMonthsKeys;
                 container.innerHTML = `
         <h2 class="text-xl font-bold mb-4">3. Analisi del Carico di Lavoro e Pianificazione</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -794,7 +802,7 @@
                             labels: monthLabels,
                             datasets: [{
                                 label: 'Ore Mensili',
-                                data: monthsKeys.map(m => analyticsData.monthlyData[m].hours),
+                                data: monthsKeys.map(m => analyticsData.monthlyData[m] ? analyticsData.monthlyData[m].hours : 0),
                                 borderColor: '#10B981',
                                 backgroundColor: 'rgba(16,185,129,0.2)',
                                 fill: true
@@ -908,7 +916,7 @@
                             labels: monthLabels,
                             datasets: [{
                                 label: 'Fatturato Mensile (€)',
-                                data: monthsKeys.map(m => analyticsData.monthlyData[m].revenue),
+                                data: monthsKeys.map(m => analyticsData.monthlyData[m] ? analyticsData.monthlyData[m].revenue : 0),
                                 backgroundColor: monthLabels.map((_, i) => barColors[i % barColors.length])
                             }]
                         },
@@ -976,8 +984,31 @@
         <h2 class="text-xl font-bold mb-4">4. Analisi della Redditività</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div class="bg-white rounded-2xl shadow-xl p-6">
-                <h3 class="text-lg font-semibold mb-4">Redditività Oraria Media per Fascia Oraria</h3>
-                <canvas id="hourlyProductivityChart" height="200"></canvas>
+                <h3 class="text-lg font-semibold mb-4">Clienti più Redditizi</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="bg-gray-50">
+                                <th class="p-3 text-left font-semibold">POSIZIONE</th>
+                                <th class="p-3 text-left font-semibold">CLIENTE</th>
+                                <th class="p-3 text-left font-semibold">FATTURATO TOTALE (€)</th>
+                                <th class="p-3 text-left font-semibold">% SUL TOTALE</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${Object.entries(analyticsData.clientData)
+                                .sort(([, a], [, b]) => b.totalRevenue - a.totalRevenue)
+                                .map(([client, data], index) => `
+                                <tr class="border-b">
+                                    <td class="p-3 font-bold text-center">${index + 1}</td>
+                                    <td class="p-3 font-medium">${client}</td>
+                                    <td class="p-3 font-semibold text-green-600">€${data.totalRevenue.toFixed(2)}</td>
+                                    <td class="p-3 font-medium">${((data.totalRevenue / analyticsData.totalRevenue) * 100).toFixed(1)}%</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
             </div>
             <div class="bg-white rounded-2xl shadow-xl p-6">
                 <h3 class="text-lg font-semibold mb-4">Matrice Valore/Impegno Cliente</h3>
@@ -1049,53 +1080,6 @@
         </div>
     `;
                 setTimeout(() => {
-                    // Line chart: Redditività oraria media
-                    new Chart(document.getElementById('hourlyProductivityChart'), {
-                        type: 'line',
-                        data: {
-                            labels: hourlyProductivityLabels,
-                            datasets: [{
-                                label: 'Redditività Oraria Media (€/h)',
-                                data: hourlyProductivityValues,
-                                borderColor: '#06B6D4',
-                                backgroundColor: 'rgba(6, 182, 212, 0.2)',
-                                fill: true
-                            }]
-                        },
-                        options: {
-                            layout: { 
-                                padding: { 
-                                    top: 60,
-                                    bottom: 20,
-                                    left: 10,
-                                    right: 10
-                                } 
-                            },
-                            scales: { 
-                                y: { beginAtZero: true } 
-                            },
-                            plugins: {
-                                legend: {
-                                    position: 'bottom',
-                                    labels: {
-                                        padding: 20
-                                    }
-                                },
-                                datalabels: {
-                                    anchor: 'center',
-                                    align: 'bottom',
-                                    offset: -10,
-                                    formatter: function (value) { return '€' + value.toFixed(1); },
-                                    color: '#1F2937',
-                                    font: { weight: 'bold', size: 10 },
-                                    backgroundColor: 'rgba(255,255,255,0.9)',
-                                    borderRadius: 3,
-                                    padding: { top: 1, bottom: 1, left: 3, right: 3 }
-                                }
-                            }
-                        }
-                    });
-
                     // Grafico Matrice Valore/Impegno
                     setTimeout(() => {
                         // Calcola i dati per la matrice
