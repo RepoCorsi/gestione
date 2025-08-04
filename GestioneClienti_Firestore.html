@@ -1335,8 +1335,23 @@
                 const clientDependencyValues = clientDependencyData.map(d => d.revenue);
 
                 const revenuePerClient = Object.values(analyticsData.clientData).map(c => c.totalRevenue);
-                const avgRevenuePerClient = analyticsData.totalRevenue / Object.keys(analyticsData.clientData).length;
-                const isDiversified = Math.max(...revenuePerClient) < avgRevenuePerClient * 1.5;
+                const numClients = Object.keys(analyticsData.clientData).length;
+                const avgRevenuePerClient = analyticsData.totalRevenue / numClients;
+
+                // Calcolo dell'indice di dipendenza più accurato
+                let isDiversified = false;
+                if (numClients === 1) {
+                    // Con un solo cliente, dipendenza è sempre alta
+                    isDiversified = false;
+                } else if (numClients >= 5) {
+                    // Con 5+ clienti, verifica che nessun cliente rappresenti più del 40% del fatturato
+                    const maxClientPercentage = Math.max(...analyticsData.clientDependency.map(c => c.percentage));
+                    isDiversified = maxClientPercentage < 40;
+                } else {
+                    // Con 2-4 clienti, verifica che il cliente principale non superi il 60% del fatturato
+                    const maxClientPercentage = Math.max(...analyticsData.clientDependency.map(c => c.percentage));
+                    isDiversified = maxClientPercentage < 60;
+                }
 
                 container.innerHTML = `
         <h2 class="text-xl font-bold mb-4">6. Analisi della Diversificazione del Portafoglio Clienti</h2>
